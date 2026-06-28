@@ -55,8 +55,8 @@ export default function LoginPage() {
     } else {
       // OTP verified successfully!
       // Here we will check if the user is a registered employer on our FastAPI backend.
-      // For now, redirect to dashboard.
-      router.push('/dashboard');
+      // For now, redirect to onboarding to handle routing.
+      router.push('/onboarding');
     }
   };
 

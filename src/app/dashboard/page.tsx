@@ -104,10 +104,10 @@ export default function DashboardPage() {
       if (error) throw error;
       
       setParsedJob({
-        title: data.role || "Unknown Role",
-        headcount_required: data.headcount || 1,
-        max_daily_salary: data.salary || 500,
-        min_experience: data.experience || 0
+        title: data.title || data.role || "Unknown Role",
+        headcount_required: data.headcount_required || data.headcount || 1,
+        max_daily_salary: data.max_daily_salary || data.salary || 500,
+        min_experience: data.min_experience || data.experience || 0
       });
     } catch (err) {
       console.error("Parse Error:", err);
