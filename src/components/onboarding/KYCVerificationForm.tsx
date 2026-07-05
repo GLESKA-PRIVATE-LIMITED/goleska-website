@@ -90,8 +90,10 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
   };
 
   const handleVerifyAadhaar = async () => {
-    if (!formData.kyc_aadhaar_number || formData.kyc_aadhaar_number.length !== 12) {
-      setError('Please enter a valid 12-digit Aadhaar number.');
+    const cleanAadhaar = (formData.kyc_aadhaar_number || '').replace(/\D/g, '');
+    
+    if (cleanAadhaar.length !== 12) {
+      setError('Please enter a valid 12-digit numeric Aadhaar number.');
       return;
     }
     
@@ -103,7 +105,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          aadhaar_number: formData.kyc_aadhaar_number,
+          aadhaar_number: cleanAadhaar,
           selected_director_name: formData.selected_director || null
         })
       });
@@ -114,7 +116,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
       }
       const data = await res.json();
       
-      updateFormData({ aadhaar_details: data.raw_details });
+      updateFormData({ aadhaar_details: data.raw_details, kyc_aadhaar_number: cleanAadhaar });
       setAadhaarVerified(true);
     } catch (err: any) {
       setError(err.message);

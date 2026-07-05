@@ -63,18 +63,52 @@ export default function ProfileView({ userType, profileData }: Props) {
               </div>
             </div>
           )}
-          
-          {userType === 'WORKER' && profileData.aadhaar_number && (
+
+          {userType === 'EMPLOYER' && profileData.cin_number && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Aadhaar (Masked)</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">CIN Number</p>
               <div className="flex items-center gap-3 bg-gray-50 border-2 border-[var(--color-charcoal)] p-3">
                 <Hash className="text-gray-400" size={20} />
-                <span className="font-bold text-lg font-mono">XXXX-XXXX-{profileData.aadhaar_number.slice(-4)}</span>
+                <span className="font-bold text-lg font-mono uppercase">{profileData.cin_number}</span>
               </div>
             </div>
           )}
 
-          <div className="bg-[var(--color-paper)] p-4 border-2 border-[var(--color-charcoal)]">
+          {userType === 'EMPLOYER' && profileData.gstin && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">GSTIN</p>
+              <div className="flex items-center gap-3 bg-gray-50 border-2 border-[var(--color-charcoal)] p-3">
+                <Hash className="text-gray-400" size={20} />
+                <span className="font-bold text-lg font-mono uppercase">{profileData.gstin}</span>
+              </div>
+            </div>
+          )}
+
+          {userType === 'EMPLOYER' && profileData.udyam_number && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Udyam Registration</p>
+              <div className="flex items-center gap-3 bg-gray-50 border-2 border-[var(--color-charcoal)] p-3">
+                <Hash className="text-gray-400" size={20} />
+                <span className="font-bold text-lg font-mono uppercase">{profileData.udyam_number}</span>
+              </div>
+            </div>
+          )}
+          
+          {(userType === 'WORKER' && profileData.aadhaar_number) || (userType === 'EMPLOYER' && profileData.kyc_aadhaar_number) ? (
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                {userType === 'EMPLOYER' ? 'Proprietor/Director Aadhaar' : 'Aadhaar (Masked)'}
+              </p>
+              <div className="flex items-center gap-3 bg-gray-50 border-2 border-[var(--color-charcoal)] p-3">
+                <Hash className="text-gray-400" size={20} />
+                <span className="font-bold text-lg font-mono">
+                  XXXX-XXXX-{(profileData.aadhaar_number || profileData.kyc_aadhaar_number).slice(-4)}
+                </span>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="bg-[var(--color-paper)] p-4 border-2 border-[var(--color-charcoal)] mt-6">
              <p className="text-sm font-bold text-gray-600">
                Note: To maintain KYC integrity, your core profile details are locked. If you need to update legal information, please contact support.
              </p>

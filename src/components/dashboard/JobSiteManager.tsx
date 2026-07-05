@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Loader2, MapPin, Trash2, Plus } from 'lucide-react';
+import { Loader2, MapPin, Trash2, Plus, Navigation } from 'lucide-react';
 import MapPicker from './MapPicker';
 
 export default function JobSiteManager() {
@@ -10,6 +10,7 @@ export default function JobSiteManager() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState('');
   
   const [newSite, setNewSite] = useState<{name: string, latitude: number | null, longitude: number | null}>({ 
@@ -73,6 +74,31 @@ export default function JobSiteManager() {
     }
   };
 
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setNewSite({
+          ...newSite,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+        setLocating(false);
+      },
+      (err) => {
+        console.error(err);
+        alert("Unable to retrieve your location. Please check browser permissions.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this job site?")) return;
     
@@ -118,7 +144,18 @@ export default function JobSiteManager() {
           </div>
           
           <div className="md:col-span-4">
-            <label className="block font-bold uppercase text-xs tracking-widest mb-2">Pin Location on Map</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block font-bold uppercase text-xs tracking-widest">Pin Location on Map</label>
+              <button 
+                type="button"
+                onClick={handleGetCurrentLocation}
+                disabled={locating}
+                className="text-xs font-bold uppercase tracking-widest bg-blue-50 text-blue-700 px-3 py-1 border-2 border-blue-700 flex items-center gap-1 hover:bg-blue-100 transition-colors disabled:opacity-50"
+              >
+                {locating ? <Loader2 className="animate-spin" size={14} /> : <Navigation size={14} />}
+                Use Current Location
+              </button>
+            </div>
             <MapPicker 
               latitude={newSite.latitude} 
               longitude={newSite.longitude} 
