@@ -95,21 +95,13 @@ export default function OnboardingPage() {
             onBack={prevStep} 
           />
         )}
-        {currentStep === 3 && (accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') && (
-          <KYCVerificationForm 
-            formData={formData} 
-            updateFormData={updateFormData} 
-            onComplete={() => router.push('/dashboard')} 
-            onBack={prevStep} 
-          />
-        )}
         
         {/* UNREGISTERED BUSINESS FLOW */}
         {currentStep === 2 && accountType === 'UNREGISTERED_BUSINESS' && (
           <UnregisteredBusinessForm
             formData={formData} 
             updateFormData={updateFormData} 
-            onComplete={() => router.push('/dashboard')} 
+            onComplete={nextStep} 
             onBack={prevStep} 
           />
         )}
@@ -117,6 +109,17 @@ export default function OnboardingPage() {
         {/* EMPLOYEE & INDIVIDUAL FLOW */}
         {currentStep === 2 && (accountType === 'EMPLOYEE' || accountType === 'INDIVIDUAL') && (
           <EmployeeForm
+            accountType={accountType}
+            formData={formData} 
+            updateFormData={updateFormData} 
+            onComplete={nextStep} 
+            onBack={prevStep} 
+          />
+        )}
+
+        {/* UNIFIED KYC STEP 3 (All Account Types) */}
+        {currentStep === 3 && (
+          <KYCVerificationForm 
             accountType={accountType}
             formData={formData} 
             updateFormData={updateFormData} 
