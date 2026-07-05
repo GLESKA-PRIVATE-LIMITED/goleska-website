@@ -14,6 +14,36 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
   
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
+  const [loadingUdyam, setLoadingUdyam] = useState(false);
+  const [udyamVerified, setUdyamVerified] = useState(false);
+
+  const handleVerifyUdyam = async () => {
+    if (!formData.udyam_number) {
+      setError('Please enter a Udyam number.');
+      return;
+    }
+    
+    setLoadingUdyam(true);
+    setError('');
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/kyc/verify-udyam`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ udyam_number: formData.udyam_number })
+      });
+      
+      if (!res.ok) throw new Error('Udyam verification failed');
+      const data = await res.json();
+      
+      updateFormData({ udyam_details: data.raw_details });
+      setUdyamVerified(true);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoadingUdyam(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -64,15 +94,15 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block font-bold uppercase text-xs tracking-widest mb-2 flex justify-between">
-                <span>Enterprise Phone Number</span>
-                <span className="text-gray-400">Optional</span>
+                <span>Enterprise Phone Number *</span>
               </label>
               <input 
                 type="tel" 
                 value={formData.enterprise_phone || ''}
                 onChange={(e) => updateFormData({ enterprise_phone: e.target.value })}
                 className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-gray-50"
-                placeholder="Leave blank if same as login"
+                placeholder="Required"
+                required
               />
             </div>
             <div>
@@ -91,18 +121,36 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
             </div>
           </div>
           
-          <div>
+          <div className={`p-4 border-2 border-[var(--color-charcoal)] ${udyamVerified ? 'bg-green-50' : 'bg-transparent'}`}>
             <label className="block font-bold uppercase text-xs tracking-widest mb-2 flex justify-between">
               <span>Udyam / MSME Certificate Number</span>
               <span className="text-gray-400">Optional</span>
             </label>
-            <input 
-              type="text" 
-              value={formData.udyam_number || ''}
-              onChange={(e) => updateFormData({ udyam_number: e.target.value.toUpperCase() })}
-              className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-gray-50 uppercase"
-              placeholder="UDYAM-XX-00-0000000"
-            />
+            <div className="flex gap-4">
+              <input 
+                type="text" 
+                value={formData.udyam_number || ''}
+                onChange={(e) => updateFormData({ udyam_number: e.target.value.toUpperCase() })}
+                disabled={udyamVerified}
+                className="flex-1 border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-gray-50 uppercase disabled:bg-gray-200"
+                placeholder="UDYAM-XX-00-0000000"
+              />
+              {!udyamVerified && formData.udyam_number && (
+                <button 
+                  type="button" 
+                  onClick={handleVerifyUdyam}
+                  disabled={loadingUdyam}
+                  className="bg-[var(--color-charcoal)] text-white font-bold px-6 border-2 border-[var(--color-charcoal)] hard-shadow hover:translate-x-1 hover:-translate-y-1 transition-all disabled:opacity-50"
+                >
+                  {loadingUdyam ? <Loader2 className="animate-spin" /> : 'Verify'}
+                </button>
+              )}
+            </div>
+            {udyamVerified && (
+              <div className="mt-2 text-sm font-bold text-green-700 flex items-center gap-2">
+                <CheckCircle2 size={16} /> Udyam Verified Successfully
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4 pt-6">
@@ -118,6 +166,10 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
               onClick={() => {
                 if (!formData.company_name || !formData.email) {
                   setError('Enterprise Name and Email are required');
+                  return;
+                }
+                if (!formData.enterprise_phone || formData.enterprise_phone.length < 10) {
+                  setError('Valid Enterprise Phone is required');
                   return;
                 }
                 setError('');

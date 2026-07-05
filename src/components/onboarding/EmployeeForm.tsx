@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import MapPicker from '../dashboard/MapPicker';
 
 interface Props {
   formData: any;
@@ -69,12 +70,13 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
           </div>
           
           <div>
-            <label className="block font-bold uppercase text-xs tracking-widest mb-2">Alternate Phone</label>
+            <label className="block font-bold uppercase text-xs tracking-widest mb-2">Alternate Phone *</label>
             <input 
               type="tel" 
               value={formData.alternate_phone || ''}
               onChange={(e) => updateFormData({ alternate_phone: e.target.value })}
               className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-gray-50"
+              required
             />
           </div>
 
@@ -99,6 +101,32 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
             </div>
           )}
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block font-bold uppercase text-xs tracking-widest mb-2 flex justify-between">
+                <span>Police Verification Cert.</span>
+                <span className="text-gray-400">Optional</span>
+              </label>
+              <input 
+                type="file" 
+                accept="image/*,.pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      updateFormData({ police_verification_file: reader.result });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="w-full border-2 border-[var(--color-charcoal)] px-4 py-2 font-bold outline-none focus:bg-gray-50 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-bold file:bg-[var(--color-charcoal)] file:text-white hover:file:bg-black cursor-pointer"
+              />
+              {formData.police_verification_file && <p className="text-xs text-green-700 mt-2 font-bold flex items-center gap-1"><CheckCircle2 size={12}/> File attached</p>}
+            </div>
+            {/* Add more fields here if needed */}
+          </div>
+
           <div className="flex gap-4 pt-6">
             <button 
               type="button" 
@@ -112,6 +140,10 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
               onClick={() => {
                 if (!formData.first_name || !formData.last_name) {
                   setError('First and Last name are required');
+                  return;
+                }
+                if (!formData.alternate_phone || formData.alternate_phone.length < 10) {
+                  setError('Valid Alternate Phone is required');
                   return;
                 }
                 updateFormData({ name: `${formData.first_name} ${formData.last_name}` });
@@ -134,9 +166,17 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
             <div className="space-y-4">
               <input 
                 type="text" 
-                placeholder="Street / Flat"
-                value={formData.permanent_address?.street || ''}
-                onChange={(e) => handleAddressChange(e, 'street')}
+                placeholder="Address Line 1 (Flat, Building, Block)"
+                value={formData.permanent_address?.address_line_1 || ''}
+                onChange={(e) => handleAddressChange(e, 'address_line_1')}
+                className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
+                required
+              />
+              <input 
+                type="text" 
+                placeholder="Address Line 2 (Street, Area, Landmark)"
+                value={formData.permanent_address?.address_line_2 || ''}
+                onChange={(e) => handleAddressChange(e, 'address_line_2')}
                 className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
               />
               <div className="grid grid-cols-2 gap-4">
@@ -146,6 +186,7 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
                   value={formData.permanent_address?.city || ''}
                   onChange={(e) => handleAddressChange(e, 'city')}
                   className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
+                  required
                 />
                 <input 
                   type="text" 
@@ -153,6 +194,15 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
                   value={formData.permanent_address?.pincode || ''}
                   onChange={(e) => handleAddressChange(e, 'pincode')}
                   className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
+                  required
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block font-bold uppercase text-xs tracking-widest mb-2">Pin Your Current Location</label>
+                <MapPicker 
+                  latitude={formData.latitude || null} 
+                  longitude={formData.longitude || null} 
+                  onChange={(lat, lng) => updateFormData({ latitude: lat, longitude: lng })} 
                 />
               </div>
             </div>

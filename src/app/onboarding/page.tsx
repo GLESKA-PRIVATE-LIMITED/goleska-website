@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 export type AccountType = 'REGISTERED_BUSINESS' | 'REGISTERED_INDUSTRY' | 'UNREGISTERED_BUSINESS' | 'EMPLOYEE' | 'INDIVIDUAL' | null;
 
 export default function OnboardingPage() {
-  const { session, user } = useAuth();
+  const { session, user, loading } = useAuth();
   const router = useRouter();
   
   const [checking, setChecking] = useState(true);
@@ -23,6 +23,16 @@ export default function OnboardingPage() {
   const [formData, setFormData] = useState<any>({});
 
   useEffect(() => {
+    // Inject email from login if it exists
+    const savedEmail = localStorage.getItem('onboardingEmail');
+    if (savedEmail && !formData.email) {
+      setFormData(prev => ({ ...prev, email: savedEmail }));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    
     if (!session) {
       router.push('/login');
       return;

@@ -19,9 +19,41 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
   
   const [loadingAadhaar, setLoadingAadhaar] = useState(false);
   const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [aadhaarMethod, setAadhaarMethod] = useState<'NUMBER' | 'DIGILOCKER'>('NUMBER');
   
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState('');
+
+  // Handle returning from Digilocker
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('digilocker_check') === 'true') {
+      const vid = localStorage.getItem('digilocker_vid');
+      if (vid) {
+        checkDigilockerStatus(vid);
+      }
+    }
+  }, []);
+
+  const checkDigilockerStatus = async (vid: string) => {
+    setLoadingAadhaar(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/kyc/digilocker-status/${vid}`);
+      if (!res.ok) throw new Error('Digilocker verification incomplete or failed');
+      const data = await res.json();
+      
+      // Assume success if we get valid data back
+      updateFormData({ aadhaar_details: data });
+      setAadhaarVerified(true);
+      // Clean up
+      localStorage.removeItem('digilocker_vid');
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoadingAadhaar(false);
+    }
+  };
 
   const handleVerifyPan = async () => {
     if (!formData.pan_number || formData.pan_number.length < 10) {
@@ -125,6 +157,45 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
     }
   };
 
+  const handleDigilockerRedirect = async () => {
+    setLoadingAadhaar(true);
+    setError('');
+    
+    try {
+      let redirectUrl = window.location.origin + window.location.pathname + '?digilocker_check=true';
+      
+      // Cashfree STRICTLY requires https:// for the redirect_url, even in sandbox testing.
+      // If we are on localhost HTTP, we spoof it to HTTPS just to pass the API validation.
+      const isLocal = redirectUrl.startsWith('http://localhost') || redirectUrl.startsWith('http://127.0.0.1');
+      if (isLocal) {
+        redirectUrl = redirectUrl.replace('http://', 'https://');
+        alert("LOCAL DEV NOTICE: Cashfree requires an HTTPS redirect. After completing DigiLocker, Cashfree will redirect you to 'https://localhost...'. Your browser will show a connection error because localhost doesn't have SSL. When that happens, simply change 'https://' back to 'http://' in your address bar and hit Enter to continue!");
+      }
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/kyc/create-digilocker`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redirect_url: redirectUrl })
+      });
+      
+      if (!res.ok) {
+         const errData = await res.json().catch(() => null);
+         throw new Error(errData?.detail || 'Failed to create Digilocker session');
+      }
+      const data = await res.json();
+      
+      if (!data.action_url) {
+         throw new Error('Cashfree did not return an action_url. Check API keys and Sandbox limits.');
+      }
+      
+      localStorage.setItem('digilocker_vid', data.verification_id);
+      window.location.href = data.action_url;
+    } catch (err: any) {
+      setError(err.message);
+      setLoadingAadhaar(false);
+    }
+  };
+
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!panVerified || !aadhaarVerified) {
@@ -163,6 +234,40 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
     }
   };
 
+  if (accountType === 'INDIVIDUAL') {
+    return (
+      <div className="space-y-8">
+        {error && (
+          <div className="bg-red-100 border-2 border-red-500 p-3 font-bold text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+        <div className="p-8 text-center border-4 border-[var(--color-charcoal)] bg-gray-50">
+          <CheckCircle2 className="mx-auto text-green-600 mb-4" size={48} />
+          <h2 className="font-[var(--font-anton)] text-3xl mb-2">No Verification Required</h2>
+          <p className="font-bold text-gray-500 uppercase tracking-widest">You can proceed directly to your dashboard.</p>
+        </div>
+        <div className="flex gap-4 pt-6">
+          <button 
+            type="button" 
+            onClick={onBack}
+            className="flex-1 bg-[var(--color-paper)] text-[var(--color-charcoal)] font-bold uppercase tracking-widest py-4 border-2 border-[var(--color-charcoal)] hard-shadow-hover flex items-center justify-center gap-2 transition-all"
+          >
+            <ArrowLeft size={20} /> Back
+          </button>
+          <button 
+            type="button"
+            onClick={handleFinalSubmit}
+            disabled={registering}
+            className="flex-1 bg-[var(--color-saffron)] text-[var(--color-charcoal)] font-bold uppercase tracking-widest py-4 border-2 border-[var(--color-charcoal)] hard-shadow-hover flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:bg-gray-300"
+          >
+            {registering ? <Loader2 className="animate-spin" /> : 'Complete Setup'} <ArrowRight size={20} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {error && (
@@ -174,12 +279,12 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
       {/* Initial Verification Step (CIN or PAN) */}
       <div className={`p-6 border-2 border-[var(--color-charcoal)] ${panVerified ? 'bg-green-50' : 'bg-gray-50'}`}>
         <h3 className="font-bold uppercase tracking-widest mb-4 flex items-center justify-between">
-          <span>1. E-KYC via {accountType === 'REGISTERED_BUSINESS' ? 'CIN' : 'PAN'}</span>
+          <span>1. E-KYC via {(accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') ? 'CIN' : 'PAN'}</span>
           {panVerified && <CheckCircle2 className="text-green-600" />}
         </h3>
         
         <div className="flex gap-4">
-          {accountType === 'REGISTERED_BUSINESS' ? (
+          {(accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') ? (
             <input 
               type="text" 
               value={formData.cin_number || ''}
@@ -204,7 +309,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
           {!panVerified && (
             <button 
               type="button" 
-              onClick={accountType === 'REGISTERED_BUSINESS' ? handleVerifyCin : handleVerifyPan}
+              onClick={(accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') ? handleVerifyCin : handleVerifyPan}
               disabled={loadingPan}
               className="bg-[var(--color-charcoal)] text-white font-bold px-6 border-2 border-[var(--color-charcoal)] hard-shadow hover:translate-x-1 hover:-translate-y-1 transition-all disabled:opacity-50"
             >
@@ -215,7 +320,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
         
         {panVerified && (
           <div className="mt-4 p-4 bg-white border border-gray-300">
-            {accountType === 'REGISTERED_BUSINESS' ? (
+            {(accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') ? (
                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">CIN Verified:</p>
             ) : (
                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">PAN Verified:</p>
@@ -247,29 +352,59 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
       {/* Aadhaar Verification Step */}
       <div className={`p-6 border-2 border-[var(--color-charcoal)] ${aadhaarVerified ? 'bg-green-50' : 'bg-gray-50'} ${!panVerified ? 'opacity-50 pointer-events-none' : ''}`}>
         <h3 className="font-bold uppercase tracking-widest mb-4 flex items-center justify-between">
-          <span>2. {accountType === 'REGISTERED_BUSINESS' ? 'Director ' : ''}Aadhaar KYC</span>
+          <span>2. {(accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') ? 'Director ' : ''}Aadhaar KYC</span>
           {aadhaarVerified && <CheckCircle2 className="text-green-600" />}
         </h3>
         
+        {!aadhaarVerified && (
+          <div className="flex gap-4 mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={aadhaarMethod === 'NUMBER'} onChange={() => setAadhaarMethod('NUMBER')} />
+              <span className="font-bold text-sm">Aadhaar Number (OTP)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" checked={aadhaarMethod === 'DIGILOCKER'} onChange={() => setAadhaarMethod('DIGILOCKER')} />
+              <span className="font-bold text-sm">DigiLocker</span>
+            </label>
+          </div>
+        )}
+
         <div className="flex gap-4">
-          <input 
-            type="text" 
-            value={formData.kyc_aadhaar_number || ''}
-            onChange={(e) => updateFormData({ kyc_aadhaar_number: e.target.value })}
-            disabled={aadhaarVerified}
-            className="flex-1 border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold disabled:bg-gray-200"
-            placeholder="0000 0000 0000"
-            maxLength={12}
-          />
-          {!aadhaarVerified && (
-            <button 
-              type="button" 
-              onClick={handleVerifyAadhaar}
-              disabled={loadingAadhaar}
-              className="bg-[var(--color-charcoal)] text-white font-bold px-6 border-2 border-[var(--color-charcoal)] hard-shadow hover:translate-x-1 hover:-translate-y-1 transition-all disabled:opacity-50"
-            >
-              {loadingAadhaar ? <Loader2 className="animate-spin" /> : 'Verify'}
-            </button>
+          {aadhaarMethod === 'NUMBER' ? (
+            <>
+              <input 
+                type="text" 
+                value={formData.kyc_aadhaar_number || ''}
+                onChange={(e) => updateFormData({ kyc_aadhaar_number: e.target.value })}
+                disabled={aadhaarVerified}
+                className="flex-1 border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold disabled:bg-gray-200"
+                placeholder="0000 0000 0000"
+                maxLength={14}
+              />
+              {!aadhaarVerified && (
+                <button 
+                  type="button" 
+                  onClick={handleVerifyAadhaar}
+                  disabled={loadingAadhaar}
+                  className="bg-[var(--color-charcoal)] text-white font-bold px-6 border-2 border-[var(--color-charcoal)] hard-shadow hover:translate-x-1 hover:-translate-y-1 transition-all disabled:opacity-50"
+                >
+                  {loadingAadhaar ? <Loader2 className="animate-spin" /> : 'Verify'}
+                </button>
+              )}
+            </>
+          ) : (
+            <div className="flex-1">
+              {!aadhaarVerified && (
+                <button 
+                  type="button" 
+                  onClick={handleDigilockerRedirect}
+                  disabled={loadingAadhaar}
+                  className="w-full bg-[#1e40af] text-white font-bold px-6 py-3 border-2 border-[#1e40af] hard-shadow hover:translate-x-1 hover:-translate-y-1 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loadingAadhaar ? <Loader2 className="animate-spin" /> : 'Continue with DigiLocker'}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

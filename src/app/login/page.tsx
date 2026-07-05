@@ -8,6 +8,7 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [loading, setLoading] = useState(false);
@@ -20,6 +21,10 @@ export default function LoginPage() {
     e.preventDefault();
     if (phone.length < 10) {
       setError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address.');
       return;
     }
     
@@ -54,8 +59,8 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       // OTP verified successfully!
-      // Here we will check if the user is a registered employer on our FastAPI backend.
-      // For now, redirect to onboarding to handle routing.
+      // Save email for onboarding
+      localStorage.setItem('onboardingEmail', email);
       router.push('/onboarding');
     }
   };
@@ -80,6 +85,18 @@ export default function LoginPage() {
 
         {step === 'PHONE' ? (
           <form onSubmit={handleSendOtp} className="space-y-6">
+            <div>
+              <label className="block font-bold uppercase text-xs tracking-widest mb-2">Email Address</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 text-lg font-bold outline-none focus:bg-gray-50 mb-4"
+                placeholder="you@company.com"
+                required
+              />
+            </div>
+            
             <div>
               <label className="block font-bold uppercase text-xs tracking-widest mb-2">Mobile Number</label>
               <div className="flex">
