@@ -8,6 +8,7 @@ import { LogOut, Zap, Mic, Loader2, CheckCircle, Clock, MapPin, IndianRupee, Arr
 
 import ProfileView from '@/components/dashboard/ProfileView';
 import JobSiteManager from '@/components/dashboard/JobSiteManager';
+import SubscriptionModal from '@/components/payments/SubscriptionModal';
 
 interface ParsedJob {
   title: string;
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [jobSites, setJobSites] = useState<any[]>([]);
   const [selectedJobSiteId, setSelectedJobSiteId] = useState<string>('');
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   useEffect(() => {
     if (!session) {
@@ -167,16 +169,22 @@ export default function DashboardPage() {
         })
       });
 
+      if (response.status === 402) {
+        setShowSubscriptionModal(true);
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error("Failed to dispatch job");
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to dispatch job");
       }
       
       const result = await response.json();
       setActiveJobId(result.job_id);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error("Dispatch Error:", err);
-      alert("Failed to dispatch. Ensure backend is running and valid job_site_id.");
+      alert(err.message || "Failed to dispatch.");
     } finally {
       setDispatching(false);
     }
@@ -195,11 +203,24 @@ export default function DashboardPage() {
             GL
           </div>
           <div>
-            <h1 className="font-[var(--font-anton)] text-3xl leading-none uppercase tracking-wide">
-              {userType === 'EMPLOYER' ? 'Command Center' : 'Worker Hub'}
-            </h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-              {userType === 'EMPLOYER' ? profileData?.company_name : profileData?.name}
+            <div className="flex items-center gap-3">
+              <h1 className="font-[var(--font-anton)] text-3xl leading-none uppercase tracking-wide">
+                {userType === 'EMPLOYER' ? 'Command Center' : 'Worker Hub'}
+              </h1>
+              {userType === 'EMPLOYER' && profileData && (
+                <span className="bg-[var(--color-saffron)] text-[var(--color-charcoal)] text-[10px] px-2 py-0.5 uppercase font-black tracking-widest border border-[var(--color-charcoal)]">
+                  {profileData.subscription_valid_until && new Date(profileData.subscription_valid_until) > new Date()
+                    ? `Subscribed to ${new Date(profileData.subscription_valid_until).toLocaleDateString()}`
+                    : !profileData.has_availed_free_dispatch 
+                      ? '1 Free Dispatch'
+                      : 'Subscription Required'}
+                </span>
+              )}
+            </div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+              {userType === 'EMPLOYER' 
+                ? (profileData?.company_name === 'Name Not Found' ? (profileData?.proprietor_name || profileData?.email) : profileData?.company_name)
+                : profileData?.name}
             </p>
           </div>
         </div>
@@ -423,6 +444,17 @@ export default function DashboardPage() {
         )}
         
       </main>
+
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal} 
+        onClose={() => setShowSubscriptionModal(false)}
+        onSuccess={() => {
+          setShowSubscriptionModal(false);
+          alert("Payment Successful! You can now dispatch workers.");
+          // Ideally refresh profileData here to show new subscription_valid_until
+        }}
+        jwtToken={session?.access_token || ''}
+      />
     </div>
   );
 }
