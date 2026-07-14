@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AccountType } from '@/app/onboarding/page';
-import { Building2, Factory, Store, UserCircle2, User } from 'lucide-react';
+import { Building2, Factory, Store, UserCircle2, User, Hammer, Users } from 'lucide-react';
 
 interface Props {
   selectedType: AccountType;
@@ -8,7 +8,9 @@ interface Props {
 }
 
 export default function AccountTypeSelector({ selectedType, onSelect }: Props) {
-  const options = [
+  const [side, setSide] = useState<'WORKER' | 'EMPLOYER' | null>(null);
+
+  const employerOptions = [
     {
       id: 'REGISTERED_BUSINESS' as AccountType,
       title: 'Registered Business',
@@ -26,24 +28,71 @@ export default function AccountTypeSelector({ selectedType, onSelect }: Props) {
       title: 'Unregistered Business',
       desc: 'Proprietors & Informal Businesses',
       icon: <Store size={24} />
-    },
-    {
-      id: 'EMPLOYEE' as AccountType,
-      title: 'Employee',
-      desc: 'Staff joining an organization',
-      icon: <UserCircle2 size={24} />
-    },
-    {
-      id: 'INDIVIDUAL' as AccountType,
-      title: 'Individual',
-      desc: 'Personal users',
-      icon: <User size={24} />
     }
   ];
 
+  const workerOptions = [
+    {
+      id: 'INDIVIDUAL' as AccountType,
+      title: 'Gig Worker / Individual',
+      desc: 'Take temporary gigs and daily dispatch jobs',
+      icon: <Hammer size={24} />
+    },
+    {
+      id: 'EMPLOYEE' as AccountType,
+      title: 'Permanent Employee',
+      desc: 'Seeking full-time payroll employment',
+      icon: <UserCircle2 size={24} />
+    }
+  ];
+
+  if (!side) {
+    return (
+      <div className="space-y-6">
+        <p className="font-bold text-gray-500 text-center uppercase tracking-widest mb-6">What brings you to Go Leska?</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <button
+            onClick={() => setSide('EMPLOYER')}
+            className="flex flex-col items-center justify-center p-8 border-4 border-black hard-shadow-hover transition-all bg-[var(--color-saffron)] group"
+          >
+            <div className="w-20 h-20 bg-black text-white flex items-center justify-center rounded-full mb-4 group-hover:scale-110 transition-transform">
+              <Users size={40} />
+            </div>
+            <h3 className="font-[var(--font-anton)] text-3xl uppercase text-black tracking-wide">I Need Workers</h3>
+            <p className="font-bold text-sm text-gray-800 mt-2 text-center uppercase tracking-widest">Hire blue-collar workforce instantly</p>
+          </button>
+
+          <button
+            onClick={() => setSide('WORKER')}
+            className="flex flex-col items-center justify-center p-8 border-4 border-black hard-shadow-hover transition-all bg-[var(--color-jungle)] group"
+          >
+            <div className="w-20 h-20 bg-black text-white flex items-center justify-center rounded-full mb-4 group-hover:scale-110 transition-transform">
+              <Hammer size={40} />
+            </div>
+            <h3 className="font-[var(--font-anton)] text-3xl uppercase text-white tracking-wide">I Need Work</h3>
+            <p className="font-bold text-sm text-green-100 mt-2 text-center uppercase tracking-widest">Find daily gigs or full-time jobs</p>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const options = side === 'EMPLOYER' ? employerOptions : workerOptions;
+
   return (
-    <div className="space-y-4">
-      <p className="font-bold text-gray-500 mb-6">Select how you want to use GO LESKA:</p>
+    <div className="space-y-4 animate-in slide-in-from-right">
+      <div className="flex items-center justify-between mb-6">
+        <p className="font-bold text-gray-500 uppercase tracking-widest">
+          {side === 'EMPLOYER' ? 'Select Employer Type' : 'Select Worker Type'}
+        </p>
+        <button 
+          onClick={() => setSide(null)}
+          className="text-xs font-bold uppercase tracking-widest text-blue-600 hover:underline"
+        >
+          Change Side
+        </button>
+      </div>
       
       {options.map((opt) => (
         <button
@@ -57,7 +106,7 @@ export default function AccountTypeSelector({ selectedType, onSelect }: Props) {
             {opt.icon}
           </div>
           <div>
-            <h3 className="font-[var(--font-anton)] tracking-wider text-xl">{opt.title}</h3>
+            <h3 className="font-[var(--font-anton)] tracking-wider text-xl uppercase">{opt.title}</h3>
             <p className="font-medium text-sm text-gray-700">{opt.desc}</p>
           </div>
         </button>

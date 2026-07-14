@@ -9,6 +9,9 @@ import { LogOut, Zap, Mic, Loader2, CheckCircle, Clock, MapPin, IndianRupee, Arr
 import ProfileView from '@/components/dashboard/ProfileView';
 import JobSiteManager from '@/components/dashboard/JobSiteManager';
 import SubscriptionModal from '@/components/payments/SubscriptionModal';
+import WorkerDashboard from '@/components/dashboard/WorkerDashboard';
+import JobOfferModal from '@/components/dashboard/JobOfferModal';
+import JobNavigationSheet from '@/components/dashboard/JobNavigationSheet';
 
 interface ParsedJob {
   title: string;
@@ -37,6 +40,7 @@ export default function DashboardPage() {
   const [jobSites, setJobSites] = useState<any[]>([]);
   const [selectedJobSiteId, setSelectedJobSiteId] = useState<string>('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showNavigation, setShowNavigation] = useState(false);
 
   useEffect(() => {
     if (!session) {
@@ -259,13 +263,15 @@ export default function DashboardPage() {
               activeTab === 'PROFILE' ? 'bg-white text-[var(--color-charcoal)] translate-y-1' : 'bg-gray-200 text-gray-500 hover:bg-gray-100'
             }`}
           >
-            <div className="flex items-center gap-2"><UserCircle size={20} /> Profile</div>
+            <div className="flex items-center gap-2">
+              <UserCircle size={20} /> {userType === 'EMPLOYER' ? 'Profile' : 'Dashboard'}
+            </div>
           </button>
         </div>
 
         {/* TAB CONTENTS */}
         
-        {activeTab === 'PROFILE' && (
+        {activeTab === 'PROFILE' && userType === 'EMPLOYER' && (
           <div className="animate-in fade-in">
             <ProfileView userType={userType} profileData={profileData} />
           </div>
@@ -443,7 +449,37 @@ export default function DashboardPage() {
           </div>
         )}
         
+        {/* WORKER DASHBOARD (Overrides tabs if active) */}
+        {userType === 'WORKER' && activeTab === 'PROFILE' && (
+           <WorkerDashboard profileData={profileData} setProfileData={setProfileData} />
+        )}
+        
       </main>
+
+      {userType === 'WORKER' && profileData?.id && (
+        <>
+          <JobOfferModal 
+            workerId={profileData.id} 
+            jwtToken={session?.access_token || ''}
+            onJobAccepted={() => {
+              // Trigger navigation flow
+              setShowNavigation(true);
+            }}
+          />
+          {showNavigation && (
+            <JobNavigationSheet 
+              jobTitle="Assigned Role"
+              employerName="Assigned Employer"
+              employerPhone="+910000000000"
+              onCancel={() => setShowNavigation(false)}
+              onArrived={() => {
+                alert("Arrival Code Sent! Waiting for Employer verification...");
+                setShowNavigation(false);
+              }}
+            />
+          )}
+        </>
+      )}
 
       <SubscriptionModal 
         isOpen={showSubscriptionModal} 

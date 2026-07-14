@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function KYCVerificationForm({ formData, updateFormData, onComplete, onBack, accountType }: Props) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   
   const [loadingPan, setLoadingPan] = useState(false);
   const [panVerified, setPanVerified] = useState(false);
@@ -198,7 +198,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
 
   const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!panVerified || !aadhaarVerified) {
+    if (accountType !== 'INDIVIDUAL' && (!panVerified || !aadhaarVerified)) {
       setError('Please complete all KYC verifications.');
       return;
     }
@@ -208,12 +208,15 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
     
     try {
       // Register with the backend
-      const isWorker = accountType === 'EMPLOYEE';
+      const isWorker = accountType === 'EMPLOYEE' || accountType === 'INDIVIDUAL';
       const registerEndpoint = isWorker ? '/api/v1/workers/register' : '/api/v1/employers/register';
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}${registerEndpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({
           ...formData,
           account_type: accountType,

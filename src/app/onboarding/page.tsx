@@ -42,13 +42,28 @@ export default function OnboardingPage() {
       const phone = user?.phone;
       if (!phone) return;
       
-      const { data: empData } = await supabase.from('employers').select('*').eq('phone', phone).single();
+      // The database might store the phone with a '+' prefix, while Supabase Auth might return it without.
+      // We check for both variations to prevent forcing users to re-register.
+      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+      const rawPhone = phone.replace('+', '');
+      
+      const { data: empData } = await supabase
+        .from('employers')
+        .select('*')
+        .in('phone', [formattedPhone, rawPhone])
+        .maybeSingle();
+        
       if (empData) {
         router.push('/dashboard');
         return;
       }
       
-      const { data: workerData } = await supabase.from('workers').select('*').eq('phone', phone).single();
+      const { data: workerData } = await supabase
+        .from('workers')
+        .select('*')
+        .in('phone', [formattedPhone, rawPhone])
+        .maybeSingle();
+        
       if (workerData) {
         router.push('/dashboard');
         return;
