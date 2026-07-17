@@ -54,6 +54,13 @@ export default function DashboardPage() {
         const empRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
           headers: { 'Authorization': `Bearer ${session.access_token}` }
         });
+
+        if (empRes.status === 403) {
+          alert('Your account has been deactivated or deleted. Please contact support.');
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
         
         if (empRes.ok) {
           const data = await empRes.json();

@@ -53,8 +53,8 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
   const [searching, setSearching] = React.useState<boolean>(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
@@ -119,17 +119,24 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
 
   return (
     <div className="flex flex-col gap-2">
-      <form onSubmit={handleSearch} className="relative">
+      <div className="relative">
         <div className="flex gap-2">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
             placeholder="Search for a location..."
             className="flex-1 border-2 border-[var(--color-charcoal)] px-3 py-2 text-sm font-bold outline-none"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleSearch()}
             disabled={searching}
             className="bg-[var(--color-charcoal)] text-white font-bold px-4 text-sm uppercase tracking-widest disabled:opacity-50"
           >
@@ -150,7 +157,7 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
             ))}
           </div>
         )}
-      </form>
+      </div>
       <div className="flex items-center justify-between bg-blue-50 border-2 border-blue-200 p-3">
         <div className="flex items-start gap-2 text-sm font-bold text-blue-900 pr-4">
           <span className="shrink-0 mt-0.5">📍</span>
