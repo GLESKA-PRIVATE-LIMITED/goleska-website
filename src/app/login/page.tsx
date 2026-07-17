@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
@@ -16,6 +17,14 @@ export default function LoginPage() {
   
   const { signInWithOtp, verifyOtp } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  React.useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'worker' || type === 'employer') {
+      localStorage.setItem('onboardingSide', type === 'worker' ? 'WORKER' : 'EMPLOYER');
+    }
+  }, [searchParams]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();

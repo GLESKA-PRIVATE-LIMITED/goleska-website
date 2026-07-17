@@ -37,10 +37,10 @@ export default function LandingPage() {
             India's blue-collar army deserves better than waiting at the chowk. GO LESKA matches verified workers to real jobs in <span className="bg-yellow-300 px-1 border-2 border-[var(--color-charcoal)] font-bold">60 seconds</span> — powered by AI, built for the factory floor.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <button className="bg-[var(--color-saffron)] text-[var(--color-charcoal)] font-bold uppercase tracking-wider px-8 py-4 border-2 border-[var(--color-charcoal)] hard-shadow-hover text-lg flex items-center justify-center gap-2 transition-all">
+            <Link href="/login?type=worker" className="bg-[var(--color-saffron)] text-[var(--color-charcoal)] font-bold uppercase tracking-wider px-8 py-4 border-2 border-[var(--color-charcoal)] hard-shadow-hover text-lg flex items-center justify-center gap-2 transition-all">
               I want work <ArrowRight size={20} />
-            </button>
-            <Link href="/login" className="bg-[var(--color-paper)] text-[var(--color-charcoal)] font-bold uppercase tracking-wider px-8 py-4 border-2 border-[var(--color-charcoal)] hard-shadow-hover text-lg flex items-center justify-center gap-2 transition-all">
+            </Link>
+            <Link href="/login?type=employer" className="bg-[var(--color-paper)] text-[var(--color-charcoal)] font-bold uppercase tracking-wider px-8 py-4 border-2 border-[var(--color-charcoal)] hard-shadow-hover text-lg flex items-center justify-center gap-2 transition-all">
               I need workers <ArrowRight size={20} />
             </Link>
           </div>

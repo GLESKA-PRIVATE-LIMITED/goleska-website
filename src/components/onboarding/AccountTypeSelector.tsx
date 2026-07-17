@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AccountType } from '@/app/onboarding/page';
 import { Building2, Factory, Store, UserCircle2, User, Hammer, Users } from 'lucide-react';
 
 interface Props {
   selectedType: AccountType;
   onSelect: (type: AccountType) => void;
+  initialSide?: 'WORKER' | 'EMPLOYER' | null;
 }
 
-export default function AccountTypeSelector({ selectedType, onSelect }: Props) {
-  const [side, setSide] = useState<'WORKER' | 'EMPLOYER' | null>(null);
+export default function AccountTypeSelector({ selectedType, onSelect, initialSide = null }: Props) {
+  const [side, setSide] = useState<'WORKER' | 'EMPLOYER' | null>(initialSide);
+
+  useEffect(() => {
+    if (initialSide) {
+      setSide(initialSide);
+    }
+  }, [initialSide]);
 
   const employerOptions = [
     {
@@ -82,16 +89,10 @@ export default function AccountTypeSelector({ selectedType, onSelect }: Props) {
 
   return (
     <div className="space-y-4 animate-in slide-in-from-right">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <p className="font-bold text-gray-500 uppercase tracking-widest">
           {side === 'EMPLOYER' ? 'Select Employer Type' : 'Select Worker Type'}
         </p>
-        <button 
-          onClick={() => setSide(null)}
-          className="text-xs font-bold uppercase tracking-widest text-blue-600 hover:underline"
-        >
-          Change Side
-        </button>
       </div>
       
       {options.map((opt) => (

@@ -94,19 +94,29 @@ export default function ProfileView({ userType, profileData }: Props) {
             </div>
           )}
           
-          {(userType === 'WORKER' && profileData.aadhaar_number) || (userType === 'EMPLOYER' && profileData.kyc_aadhaar_number) ? (
+          {userType === 'EMPLOYER' && (profileData.account_type === 'REGISTERED_BUSINESS' || profileData.account_type === 'REGISTERED_INDUSTRY') && (
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                {userType === 'EMPLOYER' ? 'Proprietor/Director Aadhaar' : 'Aadhaar (Masked)'}
-              </p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Director Name</p>
               <div className="flex items-center gap-3 bg-gray-50 border-2 border-[var(--color-charcoal)] p-3">
-                <Hash className="text-gray-400" size={20} />
-                <span className="font-bold text-lg font-mono">
-                  XXXX-XXXX-{(profileData.aadhaar_number || profileData.kyc_aadhaar_number).slice(-4)}
+                <User className="text-gray-400" size={20} />
+                <span className="font-bold text-lg">
+                  {profileData.director_data && profileData.director_data.length > 0 ? profileData.director_data[0].name : 'Not available'}
                 </span>
               </div>
             </div>
-          ) : null}
+          )}
+
+          {userType === 'EMPLOYER' && profileData.account_type === 'UNREGISTERED_BUSINESS' && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Proprietor Name</p>
+              <div className="flex items-center gap-3 bg-gray-50 border-2 border-[var(--color-charcoal)] p-3">
+                <User className="text-gray-400" size={20} />
+                <span className="font-bold text-lg">
+                  {profileData.proprietor_name || 'Not available'}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="bg-[var(--color-paper)] p-4 border-2 border-[var(--color-charcoal)] mt-6">
              <p className="text-sm font-bold text-gray-600">

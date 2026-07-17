@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -32,6 +32,16 @@ function LocationMarker({ position, onChange }: { position: [number, number] | n
   );
 }
 
+function MapFlyTo({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 14);
+    }
+  }, [position]);
+  return null;
+}
+
 export default function MapPickerInner({ latitude, longitude, onChange }: Props) {
   // Default to New Delhi coordinates
   const defaultCenter: [number, number] = [28.6139, 77.2090];
@@ -39,6 +49,30 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
 
   const [address, setAddress] = React.useState<string>('Click on the map to drop a pin');
   const [loadingAddress, setLoadingAddress] = React.useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = React.useState<string>('');
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [searching, setSearching] = React.useState<boolean>(false);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`);
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSelectResult = (result: any) => {
+    onChange(parseFloat(result.lat), parseFloat(result.lon));
+    setSearchResults([]);
+    setSearchQuery(result.display_name);
+  };
 
   useEffect(() => {
     if (latitude && longitude) {
@@ -85,6 +119,38 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
 
   return (
     <div className="flex flex-col gap-2">
+      <form onSubmit={handleSearch} className="relative">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for a location..."
+            className="flex-1 border-2 border-[var(--color-charcoal)] px-3 py-2 text-sm font-bold outline-none"
+          />
+          <button
+            type="submit"
+            disabled={searching}
+            className="bg-[var(--color-charcoal)] text-white font-bold px-4 text-sm uppercase tracking-widest disabled:opacity-50"
+          >
+            {searching ? '...' : 'Search'}
+          </button>
+        </div>
+        {searchResults.length > 0 && (
+          <div className="absolute z-10 top-full left-0 right-0 bg-white border-2 border-[var(--color-charcoal)] max-h-48 overflow-y-auto">
+            {searchResults.map((r, i) => (
+              <button
+                type="button"
+                key={i}
+                onClick={() => handleSelectResult(r)}
+                className="block w-full text-left px-3 py-2 text-xs font-medium hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+              >
+                {r.display_name}
+              </button>
+            ))}
+          </div>
+        )}
+      </form>
       <div className="flex items-center justify-between bg-blue-50 border-2 border-blue-200 p-3">
         <div className="flex items-start gap-2 text-sm font-bold text-blue-900 pr-4">
           <span className="shrink-0 mt-0.5">📍</span>
@@ -110,6 +176,7 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <LocationMarker position={position} onChange={onChange} />
+          <MapFlyTo position={position} />
         </MapContainer>
       </div>
     </div>

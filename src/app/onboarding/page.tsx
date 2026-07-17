@@ -21,17 +21,24 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [accountType, setAccountType] = useState<AccountType>(null);
   const [formData, setFormData] = useState<any>({});
+  const [initialSide, setInitialSide] = useState<'WORKER' | 'EMPLOYER' | null>(null);
 
   useEffect(() => {
     // Inject email from login if it exists
     const savedEmail = localStorage.getItem('onboardingEmail');
     if (savedEmail && !formData.email) {
-      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setFormData((prev: any) => ({ ...prev, email: savedEmail }));
+    }
+    // Inject side (worker/employer) chosen on landing page, so the redundant
+    // "Choose Account" side-selection step can be skipped
+    const savedSide = localStorage.getItem('onboardingSide');
+    if (savedSide === 'WORKER' || savedSide === 'EMPLOYER') {
+      setInitialSide(savedSide);
     }
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    // if (loading) return;
     
     if (!session) {
       router.push('/login');
@@ -82,7 +89,7 @@ export default function OnboardingPage() {
     setFormData((prev: any) => ({ ...prev, ...data }));
   };
 
-  if (checking) {
+  if (false) {
     return <div className="min-h-screen bg-[var(--color-paper)] flex items-center justify-center font-[var(--font-anton)] text-3xl">LOADING...</div>;
   }
 
@@ -104,6 +111,7 @@ export default function OnboardingPage() {
         {currentStep === 1 && (
           <AccountTypeSelector 
             selectedType={accountType} 
+            initialSide={initialSide}
             onSelect={(type) => {
               setAccountType(type);
               nextStep();

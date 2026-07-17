@@ -126,7 +126,7 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
               <span>Udyam / MSME Certificate Number</span>
               <span className="text-gray-400">Optional</span>
             </label>
-            <div className="flex gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <input 
                 type="text" 
                 value={formData.udyam_number || ''}
@@ -153,7 +153,7 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
             )}
           </div>
 
-          <div className="flex gap-4 pt-6">
+          <div className="flex flex-col md:flex-row gap-4 pt-6">
             <button 
               type="button" 
               onClick={onBack}
@@ -199,7 +199,7 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
 
           {/* Removed internal Aadhaar KYC to use unified KYC component */}
 
-          <div className="flex gap-4 pt-6">
+          <div className="flex flex-col md:flex-row gap-4 pt-6">
             <button 
               type="button" 
               onClick={() => setStep(1)}

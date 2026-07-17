@@ -250,7 +250,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
           <h2 className="font-[var(--font-anton)] text-3xl mb-2">No Verification Required</h2>
           <p className="font-bold text-gray-500 uppercase tracking-widest">You can proceed directly to your dashboard.</p>
         </div>
-        <div className="flex gap-4 pt-6">
+        <div className="flex flex-col md:flex-row gap-4 pt-6">
           <button 
             type="button" 
             onClick={onBack}
@@ -286,7 +286,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
           {panVerified && <CheckCircle2 className="text-green-600" />}
         </h3>
         
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           {(accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') ? (
             <input 
               type="text" 
@@ -360,7 +360,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
         </h3>
         
         {!aadhaarVerified && (
-          <div className="flex gap-4 mb-4">
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="radio" checked={aadhaarMethod === 'NUMBER'} onChange={() => setAadhaarMethod('NUMBER')} />
               <span className="font-bold text-sm">Aadhaar Number (OTP)</span>
@@ -372,7 +372,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           {aadhaarMethod === 'NUMBER' ? (
             <>
               <input 
@@ -412,7 +412,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
         </div>
       </div>
 
-      <div className="flex gap-4 pt-6">
+      <div className="flex flex-col md:flex-row gap-4 pt-6">
         <button 
           type="button" 
           onClick={onBack}
