@@ -48,48 +48,70 @@ export default function DashboardPage() {
       return;
     }
 
+    const tryEmployer = async (): Promise<'FOUND' | 'NOT_FOUND' | 'FORBIDDEN'> => {
+      const empRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (empRes.status === 403) return 'FORBIDDEN';
+      if (!empRes.ok) return 'NOT_FOUND';
+
+      const data = await empRes.json();
+      setProfileData(data);
+      setUserType('EMPLOYER');
+
+      // Fetch Job Sites
+      const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (siteRes.ok) {
+        const sites = await siteRes.json();
+        setJobSites(sites);
+        if (sites.length > 0) setSelectedJobSiteId(sites[0].id);
+      }
+      return 'FOUND';
+    };
+
+    const tryWorker = async (): Promise<'FOUND' | 'NOT_FOUND' | 'FORBIDDEN'> => {
+      const workerRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (workerRes.status === 403) return 'FORBIDDEN';
+      if (!workerRes.ok) return 'NOT_FOUND';
+
+      const data = await workerRes.json();
+      setProfileData(data);
+      setUserType('WORKER');
+      setActiveTab('PROFILE'); // Workers don't have dispatch yet
+      return 'FOUND';
+    };
+
     const checkProfile = async () => {
       try {
-        // Try to fetch employer profile via backend
-        const empRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
-          headers: { 'Authorization': `Bearer ${session.access_token}` }
-        });
+        // Respect the side chosen at login ("I want work" vs "I want workers")
+        // so a dual-registered email lands on the intended dashboard.
+        const savedSide = localStorage.getItem('onboardingSide');
+        const [first, second] = savedSide === 'WORKER' ? [tryWorker, tryEmployer] : [tryEmployer, tryWorker];
 
-        if (empRes.status === 403) {
+        const firstResult = await first();
+        if (firstResult === 'FORBIDDEN') {
           alert('Your account has been deactivated or deleted. Please contact support.');
           await supabase.auth.signOut();
           router.push('/login');
           return;
         }
-        
-        if (empRes.ok) {
-          const data = await empRes.json();
-          setProfileData(data);
-          setUserType('EMPLOYER');
-          
-          // Fetch Job Sites
-          const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
-            headers: { 'Authorization': `Bearer ${session.access_token}` }
-          });
-          if (siteRes.ok) {
-            const sites = await siteRes.json();
-            setJobSites(sites);
-            if (sites.length > 0) setSelectedJobSiteId(sites[0].id);
-          }
-        } else {
-          // Try worker profile
-          const workerRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me`, {
-            headers: { 'Authorization': `Bearer ${session.access_token}` }
-          });
-          
-          if (workerRes.ok) {
-            const data = await workerRes.json();
-            setProfileData(data);
-            setUserType('WORKER');
-            setActiveTab('PROFILE'); // Workers don't have dispatch yet
-          } else {
-            router.push('/onboarding');
-          }
+        if (firstResult === 'FOUND') return;
+
+        const secondResult = await second();
+        if (secondResult === 'FORBIDDEN') {
+          alert('Your account has been deactivated or deleted. Please contact support.');
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
+        if (secondResult !== 'FOUND') {
+          router.push('/onboarding');
         }
       } catch (err) {
         console.error(err);

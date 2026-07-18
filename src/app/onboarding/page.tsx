@@ -48,34 +48,52 @@ export default function OnboardingPage() {
     const checkExisting = async () => {
       const phone = user?.phone;
       if (!phone) return;
-      
+
       // The database might store the phone with a '+' prefix, while Supabase Auth might return it without.
       // We check for both variations to prevent forcing users to re-register.
       const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
       const rawPhone = phone.replace('+', '');
-      
-      const { data: empData } = await supabase
-        .from('employers')
-        .select('*')
-        .in('phone', [formattedPhone, rawPhone])
-        .maybeSingle();
-        
-      if (empData) {
-        router.push('/dashboard');
-        return;
+
+      const checkEmployer = async () => {
+        const { data } = await supabase
+          .from('employers')
+          .select('*')
+          .in('phone', [formattedPhone, rawPhone])
+          .maybeSingle();
+        return !!data;
+      };
+
+      const checkWorker = async () => {
+        const { data } = await supabase
+          .from('workers')
+          .select('*')
+          .in('phone', [formattedPhone, rawPhone])
+          .maybeSingle();
+        return !!data;
+      };
+
+      // Same phone number can end up registering both an employer and a
+      // worker profile. If the user chose "I want work" at login, only skip
+      // onboarding when a worker profile already exists for this phone -
+      // an existing employer profile shouldn't block worker registration.
+      const savedSide = localStorage.getItem('onboardingSide');
+
+      if (savedSide === 'WORKER') {
+        if (await checkWorker()) {
+          router.push('/dashboard');
+          return;
+        }
+      } else {
+        if (await checkEmployer()) {
+          router.push('/dashboard');
+          return;
+        }
+        if (await checkWorker()) {
+          router.push('/dashboard');
+          return;
+        }
       }
-      
-      const { data: workerData } = await supabase
-        .from('workers')
-        .select('*')
-        .in('phone', [formattedPhone, rawPhone])
-        .maybeSingle();
-        
-      if (workerData) {
-        router.push('/dashboard');
-        return;
-      }
-      
+
       setChecking(false);
     };
     
