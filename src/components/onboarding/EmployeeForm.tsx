@@ -180,19 +180,37 @@ export default function EmployeeForm({ formData, updateFormData, onComplete, onB
                 className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
               />
               <div className="grid grid-cols-2 gap-4">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="City"
                   value={formData.permanent_address?.city || ''}
                   onChange={(e) => handleAddressChange(e, 'city')}
                   className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
                   required
                 />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Pincode"
                   value={formData.permanent_address?.pincode || ''}
                   onChange={(e) => handleAddressChange(e, 'pincode')}
+                  className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="State"
+                  value={formData.permanent_address?.state || ''}
+                  onChange={(e) => handleAddressChange(e, 'state')}
+                  className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Country"
+                  value={formData.permanent_address?.country || ''}
+                  onChange={(e) => handleAddressChange(e, 'country')}
                   className="w-full border-2 border-[var(--color-charcoal)] px-4 py-3 font-bold outline-none focus:bg-white"
                   required
                 />
