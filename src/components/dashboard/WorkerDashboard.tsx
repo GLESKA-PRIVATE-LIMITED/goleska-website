@@ -27,6 +27,7 @@ export default function WorkerDashboard({ profileData, setProfileData }: WorkerD
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [arriving, setArriving] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
     fetchWorkerJobs();
@@ -118,6 +119,29 @@ export default function WorkerDashboard({ profileData, setProfileData }: WorkerD
     }
   };
 
+  const handleDismiss = async () => {
+    if (!activeJob) return;
+    if (!confirm('Clear this active assignment? This cannot be undone.')) return;
+    setDismissing(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/jobs/${activeJob.job_id}/dismiss`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail || 'Failed to clear assignment');
+      }
+      setActiveJob(null);
+      toast.success('Assignment cleared.');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Failed to clear assignment.');
+    } finally {
+      setDismissing(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-lg mx-auto pb-24">
       {/* Availability Toggle */}
@@ -159,7 +183,15 @@ export default function WorkerDashboard({ profileData, setProfileData }: WorkerD
               <span className="font-[var(--font-anton)] text-xl leading-none">₹{activeJob.salary}</span>
             </div>
           </div>
-          
+
+          <button
+            onClick={handleDismiss}
+            disabled={dismissing}
+            className="w-full text-xs font-bold uppercase tracking-widest text-gray-700 hover:text-black underline mb-3 disabled:opacity-50"
+          >
+            {dismissing ? 'Clearing...' : 'Clear this assignment'}
+          </button>
+
           {activeJob.status === 'ARRIVED' ? (
             <>
               {/* Arrival OTP (generated once on arrival, persisted server-side) */}

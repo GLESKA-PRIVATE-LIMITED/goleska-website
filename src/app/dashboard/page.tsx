@@ -12,6 +12,7 @@ import SubscriptionModal from '@/components/payments/SubscriptionModal';
 import WorkerDashboard from '@/components/dashboard/WorkerDashboard';
 import JobOfferModal from '@/components/dashboard/JobOfferModal';
 import JobNavigationSheet from '@/components/dashboard/JobNavigationSheet';
+import ArrivalNotifier from '@/components/dashboard/ArrivalNotifier';
 import { toast } from 'sonner';
 
 interface ParsedJob {
@@ -35,6 +36,11 @@ export default function DashboardPage() {
   const [prompt, setPrompt] = useState('');
   const [parsing, setParsing] = useState(false);
   const [parsedJob, setParsedJob] = useState<ParsedJob | null>(null);
+  // Form-based dispatch inputs (replaces the disabled LLM parsing flow).
+  const [formRole, setFormRole] = useState('');
+  const [formHeadcount, setFormHeadcount] = useState<number>(1);
+  const [formSalary, setFormSalary] = useState<number>(500);
+  const [formExperience, setFormExperience] = useState<number>(0);
   const [dispatching, setDispatching] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -166,6 +172,13 @@ export default function DashboardPage() {
     };
   }, [activeJobId]);
 
+  /*
+   * LLM-based parsing, disabled — using form-based input instead.
+   * (Kept for future reference.) This handler invoked the Supabase Edge
+   * Function 'llm-dispatcher' to parse a free-text / voice prompt into a job
+   * card. Re-enable by uncommenting this handler and the LLM input JSX block
+   * below, and removing the form-based input.
+   *
   const handleParsePrompt = async () => {
     if (!prompt.trim()) return;
     setParsing(true);
@@ -192,6 +205,23 @@ export default function DashboardPage() {
     } finally {
       setParsing(false);
     }
+  };
+  */
+
+  // Form-based dispatch: builds the same shape the LLM response used, so the
+  // existing Confirm Job Card + dispatch flow is reused unchanged.
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formRole.trim()) {
+      toast.error("Please enter a role.");
+      return;
+    }
+    setParsedJob({
+      title: formRole.trim(),
+      headcount_required: formHeadcount || 1,
+      max_daily_salary: formSalary || 0,
+      min_experience: formExperience || 0,
+    });
   };
 
   const handleDispatch = async () => {
@@ -366,7 +396,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-7 space-y-8">
               <div className="bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-6 relative">
                  <div className="absolute -top-4 -left-4 bg-[var(--color-charcoal)] text-white font-bold px-4 py-1 border-2 border-[var(--color-charcoal)] uppercase tracking-widest text-sm">
-                   LLM Dispatch Engine
+                   Post a Job
                  </div>
                  
                  <div className="mt-6">
@@ -384,6 +414,11 @@ export default function DashboardPage() {
                       </select>
                     </div>
                     
+                    {/*
+                      LLM-based parsing, disabled — using form-based input instead. (Kept for future reference.)
+                      The "Voice or Text Input" + "Extract Requirements" block below called handleParsePrompt()
+                      (commented out above), which invoked the Supabase Edge Function 'llm-dispatcher'.
+                      Re-enable by uncommenting handleParsePrompt and this block, and removing the form below.
                     <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Voice or Text Input (Hindi/English)</label>
                     <div className="relative">
                       <textarea 
@@ -430,6 +465,60 @@ export default function DashboardPage() {
                       {parsing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} className="fill-[var(--color-saffron)] text-[var(--color-saffron)]" />}
                       Extract Requirements
                     </button>
+                    */}
+
+                    {/* Form-based dispatch input (replaces the LLM parsing flow) */}
+                    <form onSubmit={handleFormSubmit} className="space-y-4">
+                      <div>
+                        <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Role</label>
+                        <input
+                          type="text"
+                          value={formRole}
+                          onChange={(e) => setFormRole(e.target.value)}
+                          className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          placeholder="e.g. Fiber Laser Operator"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Headcount</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={formHeadcount}
+                            onChange={(e) => setFormHeadcount(parseInt(e.target.value) || 0)}
+                            className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Salary / Day (Rs)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={formSalary}
+                            onChange={(e) => setFormSalary(parseInt(e.target.value) || 0)}
+                            className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Min Experience (Yrs)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={formExperience}
+                            onChange={(e) => setFormExperience(parseInt(e.target.value) || 0)}
+                            className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!formRole.trim()}
+                        className="mt-2 bg-[var(--color-charcoal)] text-white font-bold uppercase tracking-widest px-6 py-3 border-2 border-[var(--color-charcoal)] hard-shadow-hover hover:bg-black transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <Zap size={18} className="fill-[var(--color-saffron)] text-[var(--color-saffron)]" /> Review Job Card
+                      </button>
+                    </form>
                  </div>
               </div>
 
@@ -564,6 +653,10 @@ export default function DashboardPage() {
             />
           )}
         </>
+      )}
+
+      {userType === 'EMPLOYER' && profileData?.id && (
+        <ArrivalNotifier jwtToken={session?.access_token || ''} />
       )}
 
       <SubscriptionModal 
