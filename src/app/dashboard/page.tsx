@@ -11,7 +11,6 @@ import JobSiteManager from '@/components/dashboard/JobSiteManager';
 import SubscriptionModal from '@/components/payments/SubscriptionModal';
 import WorkerDashboard from '@/components/dashboard/WorkerDashboard';
 import JobOfferModal from '@/components/dashboard/JobOfferModal';
-import JobNavigationSheet from '@/components/dashboard/JobNavigationSheet';
 import ArrivalNotifier from '@/components/dashboard/ArrivalNotifier';
 import { toast } from 'sonner';
 
@@ -48,7 +47,7 @@ export default function DashboardPage() {
   const [jobSites, setJobSites] = useState<any[]>([]);
   const [selectedJobSiteId, setSelectedJobSiteId] = useState<string>('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showNavigation, setShowNavigation] = useState(false);
+  const [workerJobsRefreshKey, setWorkerJobsRefreshKey] = useState(0);
 
   useEffect(() => {
     // [Onboarding Timer] Start time is stamped at OTP verification (login page).
@@ -162,6 +161,13 @@ export default function DashboardPage() {
         (payload) => {
           if (payload.new.status === 'ACCEPTED') {
             setMatches((prev) => [...prev, payload.new]);
+          } else if (payload.new.status === 'COMPLETED') {
+            // Job fully wrapped up (both arrival and completion confirmed by
+            // the employer) - clear the active dispatch panel.
+            toast.success('Job completed! Dispatch cleared.');
+            setActiveJobId(null);
+            setMatches([]);
+            setParsedJob(null);
           }
         }
       )
@@ -394,6 +400,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in">
             {/* DISPATCH COLUMN */}
             <div className="lg:col-span-7 space-y-8">
+              <ArrivalNotifier jwtToken={session?.access_token || ''} activeJobId={activeJobId} />
               <div className="bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-6 relative">
                  <div className="absolute -top-4 -left-4 bg-[var(--color-charcoal)] text-white font-bold px-4 py-1 border-2 border-[var(--color-charcoal)] uppercase tracking-widest text-sm">
                    Post a Job
@@ -625,41 +632,26 @@ export default function DashboardPage() {
         
         {/* WORKER DASHBOARD (Overrides tabs if active) */}
         {userType === 'WORKER' && activeTab === 'PROFILE' && (
-           <WorkerDashboard profileData={profileData} setProfileData={setProfileData} />
+           <WorkerDashboard profileData={profileData} setProfileData={setProfileData} refreshSignal={workerJobsRefreshKey} />
         )}
-        
+
       </main>
 
       {userType === 'WORKER' && profileData?.id && (
         <>
-          <JobOfferModal 
-            workerId={profileData.id} 
+          <JobOfferModal
+            workerId={profileData.id}
             jwtToken={session?.access_token || ''}
             onJobAccepted={() => {
-              // Trigger navigation flow
-              setShowNavigation(true);
+              // The real active-job card (with live arrive/complete/OTP flow)
+              // lives in WorkerDashboard - just tell it to refetch.
+              setWorkerJobsRefreshKey((k) => k + 1);
             }}
           />
-          {showNavigation && (
-            <JobNavigationSheet 
-              jobTitle="Assigned Role"
-              employerName="Assigned Employer"
-              employerPhone="+910000000000"
-              onCancel={() => setShowNavigation(false)}
-              onArrived={() => {
-                toast.success("Arrival Code Sent! Waiting for Employer verification...");
-                setShowNavigation(false);
-              }}
-            />
-          )}
         </>
       )}
 
-      {userType === 'EMPLOYER' && profileData?.id && (
-        <ArrivalNotifier jwtToken={session?.access_token || ''} />
-      )}
-
-      <SubscriptionModal 
+      <SubscriptionModal
         isOpen={showSubscriptionModal} 
         onClose={() => setShowSubscriptionModal(false)}
         onSuccess={() => {

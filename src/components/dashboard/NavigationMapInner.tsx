@@ -55,9 +55,9 @@ export default function NavigationMapInner({ targetLat, targetLng }: Props) {
 
   return (
     <div className="w-full h-full bg-black z-0">
-      <MapContainer 
+      <MapContainer
         bounds={bounds}
-        zoom={13} 
+        boundsOptions={{ padding: [50, 50] }}
         style={{ height: '100%', width: '100%', backgroundColor: '#000' }}
         scrollWheelZoom={true}
         zoomControl={false}
