@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ArrowRight, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   formData: any;
@@ -169,7 +170,7 @@ export default function KYCVerificationForm({ formData, updateFormData, onComple
       const isLocal = redirectUrl.startsWith('http://localhost') || redirectUrl.startsWith('http://127.0.0.1');
       if (isLocal) {
         redirectUrl = redirectUrl.replace('http://', 'https://');
-        alert("LOCAL DEV NOTICE: Cashfree requires an HTTPS redirect. After completing DigiLocker, Cashfree will redirect you to 'https://localhost...'. Your browser will show a connection error because localhost doesn't have SSL. When that happens, simply change 'https://' back to 'http://' in your address bar and hit Enter to continue!");
+        toast.info("LOCAL DEV NOTICE: Cashfree requires an HTTPS redirect. After completing DigiLocker, Cashfree will redirect you to 'https://localhost...'. Your browser will show a connection error because localhost doesn't have SSL. When that happens, simply change 'https://' back to 'http://' in your address bar and hit Enter to continue!", { duration: 12000 });
       }
       
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/kyc/create-digilocker`, {

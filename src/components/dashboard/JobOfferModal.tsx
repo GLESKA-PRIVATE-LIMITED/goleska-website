@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle, MapPin, IndianRupee, Briefcase, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface JobOfferModalProps {
   workerId: string;
@@ -81,12 +82,12 @@ export default function JobOfferModal({ workerId, jwtToken, onJobAccepted }: Job
         setOffer(null);
         onJobAccepted();
       } else {
-        alert("Failed to accept job. It may have expired.");
+        toast.error("Failed to accept job. It may have expired.");
         setOffer(null);
       }
     } catch (e) {
       console.error(e);
-      alert("Error accepting job");
+      toast.error("Error accepting job");
       setOffer(null);
     } finally {
       setProcessing(false);
@@ -129,7 +130,7 @@ export default function JobOfferModal({ workerId, jwtToken, onJobAccepted }: Job
             <AlertCircle size={48} className="text-black" />
           </div>
           
-          <h1 className="font-[var(--font-anton)] text-5xl text-white uppercase leading-none mb-4 tracking-wide">
+          <h1 className="font-[var(--font-anton)] text-4xl sm:text-5xl text-white uppercase leading-none mb-4 tracking-wide">
             Dispatch Received
           </h1>
           

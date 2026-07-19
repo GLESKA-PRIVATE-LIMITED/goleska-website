@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { toast } from 'sonner';
 
 // Fix for default marker icon in Next.js
 // @ts-ignore
@@ -58,7 +59,7 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=10&countrycodes=in&addressdetails=1`);
       const data = await res.json();
       setSearchResults(data);
     } catch (err) {
@@ -67,6 +68,17 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
       setSearching(false);
     }
   };
+
+  useEffect(() => {
+    if (searchQuery.trim().length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleSelectResult = (result: any) => {
     onChange(parseFloat(result.lat), parseFloat(result.lon));
@@ -100,7 +112,7 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
 
   const handleCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      toast.error("Geolocation is not supported by your browser");
       return;
     }
     setLoadingAddress(true);
@@ -110,7 +122,7 @@ export default function MapPickerInner({ latitude, longitude, onChange }: Props)
         onChange(pos.coords.latitude, pos.coords.longitude);
       },
       (err) => {
-        alert("Unable to retrieve your location");
+        toast.error("Unable to retrieve your location");
         setLoadingAddress(false);
         setAddress('Click on the map to drop a pin');
       }

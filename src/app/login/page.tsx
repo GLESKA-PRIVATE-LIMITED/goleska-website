@@ -70,6 +70,9 @@ export default function LoginPage() {
       // OTP verified successfully!
       // Save email for onboarding
       localStorage.setItem('onboardingEmail', email);
+      // [Onboarding Timer] Stamp signup start = OTP verification time.
+      localStorage.setItem('onboardingStartTime', Date.now().toString());
+      console.log('[Onboarding Timer] Started at OTP verification.');
       router.push('/onboarding');
     }
   };

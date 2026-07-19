@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Power, MapPin, Navigation, Clock, CheckCircle, Star } from 'lucide-react';
+import { Power, MapPin, Navigation, Clock, CheckCircle, Star, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface ActiveJob {
   match_id: string;
@@ -9,6 +10,7 @@ interface ActiveJob {
   employer_name: string;
   employer_phone: string;
   status: string;
+  arrival_otp?: string | null;
   salary: number;
 }
 
@@ -23,6 +25,8 @@ export default function WorkerDashboard({ profileData, setProfileData }: WorkerD
   const [activeJob, setActiveJob] = useState<ActiveJob | null>(null);
   const [loadingToggle, setLoadingToggle] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(true);
+  const [arriving, setArriving] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     fetchWorkerJobs();
@@ -64,6 +68,53 @@ export default function WorkerDashboard({ profileData, setProfileData }: WorkerD
       setIsAvailable(!newValue);
     } finally {
       setLoadingToggle(false);
+    }
+  };
+
+  const handleArrive = async () => {
+    if (!activeJob) return;
+    setArriving(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/jobs/${activeJob.job_id}/arrive`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail || 'Failed to mark arrival');
+      }
+      const data = await res.json();
+      // Persist the OTP in local state; it also survives refresh because
+      // /me/jobs returns arrival_otp for ARRIVED jobs.
+      setActiveJob({ ...activeJob, status: data.status, arrival_otp: data.arrival_otp });
+      toast.success('Arrival recorded! Share the OTP with your employer.');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Failed to mark arrival.');
+    } finally {
+      setArriving(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (!activeJob) return;
+    setCompleting(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/jobs/${activeJob.job_id}/complete`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail || 'Failed to complete job');
+      }
+      setActiveJob(null);
+      toast.success('Job marked as complete. Great work!');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Failed to complete job.');
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -109,12 +160,36 @@ export default function WorkerDashboard({ profileData, setProfileData }: WorkerD
             </div>
           </div>
           
-          <button className="w-full bg-black text-white font-[var(--font-anton)] text-xl uppercase tracking-widest py-4 border-4 border-black hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 mb-3">
-            <Navigation size={20} /> I've Arrived
-          </button>
-          <button className="w-full bg-white text-black font-bold uppercase tracking-widest py-3 border-4 border-black hover:bg-gray-100 transition-colors">
-            Mark Complete
-          </button>
+          {activeJob.status === 'ARRIVED' ? (
+            <>
+              {/* Arrival OTP (generated once on arrival, persisted server-side) */}
+              <div className="bg-white border-4 border-black p-4 mb-3 text-center relative overflow-hidden">
+                <div className="absolute -right-3 -top-3 opacity-10">
+                  <ShieldCheck size={90} />
+                </div>
+                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-1">Arrival OTP Code</p>
+                <p className="font-[var(--font-anton)] text-5xl tracking-[0.3em] leading-none">{activeJob.arrival_otp || '----'}</p>
+                <p className="text-xs font-bold text-gray-600 mt-2">Share this code with the employer to confirm you arrived.</p>
+              </div>
+              <button
+                onClick={handleComplete}
+                disabled={completing}
+                className="w-full bg-[var(--color-jungle)] text-white font-[var(--font-anton)] text-xl uppercase tracking-widest py-4 border-4 border-black hover:bg-green-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {completing ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle size={20} />}
+                {completing ? 'Completing...' : 'Mark Complete'}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={handleArrive}
+              disabled={arriving}
+              className="w-full bg-black text-white font-[var(--font-anton)] text-xl uppercase tracking-widest py-4 border-4 border-black hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {arriving ? <Loader2 className="animate-spin" size={20} /> : <Navigation size={20} />}
+              {arriving ? 'Marking...' : "I've Arrived"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-white border-4 border-black p-8 text-center hard-shadow">

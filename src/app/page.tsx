@@ -25,12 +25,12 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO SECTION */}
-      <section className="relative px-6 py-24 md:py-32 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
-        <div className="flex-1 space-y-8 z-10 relative">
+      <section className="relative px-6 py-16 sm:py-24 md:py-32 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-12">
+        <div className="flex-1 space-y-8 z-10 relative w-full">
           <div className="inline-block bg-[var(--color-charcoal)] text-[var(--color-paper)] px-4 py-1 text-sm font-bold uppercase tracking-widest border-2 border-[var(--color-charcoal)] transform -rotate-2">
             The Blue Collar Army
           </div>
-          <h1 className="font-[var(--font-anton)] text-7xl md:text-8xl leading-[0.9] uppercase tracking-wide text-[var(--color-charcoal)]">
+          <h1 className="font-[var(--font-anton)] text-5xl sm:text-6xl md:text-8xl leading-[0.9] uppercase tracking-wide text-[var(--color-charcoal)]">
             Kaam Milega.<br/><span className="text-[var(--color-saffron)]">Turant.</span>
           </h1>
           <p className="text-xl md:text-2xl font-medium max-w-xl leading-relaxed">
@@ -47,7 +47,7 @@ export default function LandingPage() {
         </div>
 
         {/* HERO IMAGE / INTERACTIVE COMPONENT */}
-        <div className="flex-1 relative w-full h-[500px] bg-[var(--color-charcoal)] border-4 border-[var(--color-charcoal)] hard-shadow overflow-hidden">
+        <div className="flex-1 relative w-full h-[360px] sm:h-[440px] md:h-[500px] bg-[var(--color-charcoal)] border-4 border-[var(--color-charcoal)] hard-shadow overflow-hidden">
            <img src="/welder.png" alt="Indian Welder" className="absolute inset-0 w-full h-full object-cover grayscale-[30%] contrast-125" />
            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
            
@@ -82,7 +82,7 @@ export default function LandingPage() {
       {/* HOW IT WORKS */}
       <section id="how" className="px-6 py-24 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="font-[var(--font-anton)] text-6xl uppercase tracking-wide">The 60-second hiring cycle</h2>
+          <h2 className="font-[var(--font-anton)] text-4xl sm:text-5xl md:text-6xl uppercase tracking-wide">The 60-second hiring cycle</h2>
           <p className="text-xl font-medium mt-4 max-w-2xl mx-auto">Inspired by Ola/Uber dispatch, rebuilt for India's industrial workforce. From "I need workers" to "workers on the way" — under a minute.</p>
         </div>
 
@@ -110,7 +110,7 @@ export default function LandingPage() {
         
         <div className="max-w-7xl mx-auto px-6 py-24 flex flex-col lg:flex-row items-center gap-16 relative z-10">
           <div className="flex-1 space-y-6">
-            <h2 className="font-[var(--font-anton)] text-7xl uppercase text-[var(--color-saffron)] leading-none">Tumhari skill.<br/>Tumhari fauj.</h2>
+            <h2 className="font-[var(--font-anton)] text-5xl sm:text-6xl lg:text-7xl uppercase text-[var(--color-saffron)] leading-none">Tumhari skill.<br/>Tumhari fauj.</h2>
             <p className="text-xl font-medium">No more middlemen. No more standing at the chowk at 5 AM. Get verified once, get matched forever. Every job adds to your permanent reputation.</p>
             <ul className="space-y-4 font-bold text-lg pt-4">
               <li className="flex items-center gap-3"><span className="text-[var(--color-saffron)]">▸</span> 12 Indian languages — Hindi, Marathi, Tamil...</li>
@@ -119,9 +119,9 @@ export default function LandingPage() {
             </ul>
           </div>
           
-          <div className="flex-1 relative flex justify-center">
+          <div className="flex-1 relative flex justify-center w-full">
             {/* Phone Mockup Card */}
-            <div className="bg-[var(--color-paper)] text-[var(--color-charcoal)] w-80 border-4 border-black p-4 rounded-xl hard-shadow transform rotate-3">
+            <div className="bg-[var(--color-paper)] text-[var(--color-charcoal)] w-full max-w-[320px] border-4 border-black p-4 rounded-xl hard-shadow transform rotate-3">
               <div className="border-b-2 border-black pb-3 mb-3 flex justify-between items-center">
                 <span className="font-bold uppercase tracking-widest text-sm">New Job Ping</span>
                 <Zap size={16} className="text-[var(--color-ember)] fill-[var(--color-ember)]"/>
@@ -146,7 +146,7 @@ export default function LandingPage() {
       {/* FOR EMPLOYERS */}
       <section id="employer" className="px-6 py-24 max-w-7xl mx-auto flex flex-col lg:flex-row-reverse items-center gap-16">
         <div className="flex-1 space-y-6">
-          <h2 className="font-[var(--font-anton)] text-7xl uppercase leading-none">Bolo.<br/>AI samajhega.<br/>Workers aayenge.</h2>
+          <h2 className="font-[var(--font-anton)] text-5xl sm:text-6xl lg:text-7xl uppercase leading-none">Bolo.<br/>AI samajhega.<br/>Workers aayenge.</h2>
           <p className="text-xl font-medium">Type or speak in any Indian language. Our LLM extracts skills, experience, salary and radius. Pick Autonomous AI dispatch or review candidates manually.</p>
         </div>
         
@@ -185,7 +185,7 @@ export default function LandingPage() {
       {/* TRADES WALL */}
       <section id="trades" className="px-6 py-24 bg-white border-y-4 border-[var(--color-charcoal)]">
         <div className="max-w-7xl mx-auto">
-          <h2 className="font-[var(--font-anton)] text-6xl uppercase text-center mb-12">38 Trades. One Army.</h2>
+          <h2 className="font-[var(--font-anton)] text-4xl sm:text-5xl md:text-6xl uppercase text-center mb-12">38 Trades. One Army.</h2>
           <div className="flex flex-wrap justify-center gap-4">
             {['Welder', 'Fitter', 'CNC Operator', 'Forklift Driver', 'Electrician', 'Plumber', 'Mason', 'Painter', 'Carpenter', 'Machine Operator', 'Packer', 'Loader', 'Security Guard', 'Housekeeping', 'Cook'].map((trade) => (
               <div key={trade} className="bg-[var(--color-paper)] border-2 border-[var(--color-charcoal)] px-6 py-3 font-[var(--font-anton)] text-2xl uppercase hard-shadow hover:bg-[var(--color-saffron)] hover:-translate-y-1 transition-all cursor-default">
@@ -201,7 +201,7 @@ export default function LandingPage() {
 
       {/* MANIFESTO */}
       <section className="px-6 py-32 max-w-4xl mx-auto text-center space-y-8">
-        <p className="font-[var(--font-anton)] text-5xl md:text-7xl uppercase leading-[0.9] text-[var(--color-charcoal)]">
+        <p className="font-[var(--font-anton)] text-4xl sm:text-5xl md:text-7xl uppercase leading-[0.9] text-[var(--color-charcoal)]">
           India was not built by spreadsheets.
         </p>
         <p className="text-2xl font-medium leading-relaxed bg-[var(--color-saffron)] inline-block px-4 py-2 border-2 border-black hard-shadow transform rotate-1">
@@ -212,15 +212,15 @@ export default function LandingPage() {
       {/* FOOTER CTA */}
       <footer className="bg-[var(--color-charcoal)] text-[var(--color-paper)] pt-24 pb-8 px-6 border-t-8 border-[var(--color-saffron)]">
         <div className="max-w-7xl mx-auto flex flex-col items-center text-center space-y-8">
-          <h2 className="font-[var(--font-anton)] text-7xl uppercase">Join the blue collar army.</h2>
+          <h2 className="font-[var(--font-anton)] text-4xl sm:text-5xl md:text-7xl uppercase">Join the blue collar army.</h2>
           <p className="text-xl font-medium max-w-lg">Drop your number. We'll text you the app link and onboard you in 4 minutes — Aadhaar verification included.</p>
           
           <div className="flex w-full max-w-md mt-8">
             <div className="bg-white border-2 border-[var(--color-paper)] text-black font-bold text-xl px-4 flex items-center justify-center">
               +91
             </div>
-            <input type="tel" placeholder="Mobile Number" className="flex-1 bg-transparent border-y-2 border-r-2 border-[var(--color-paper)] px-4 py-4 text-xl font-bold outline-none placeholder:text-gray-500" />
-            <button className="bg-[var(--color-saffron)] text-[var(--color-charcoal)] font-[var(--font-anton)] text-xl tracking-wider uppercase px-6 py-4 border-2 border-[var(--color-paper)] hard-shadow-hover hover:bg-[var(--color-ember)] transition-colors">
+            <input type="tel" placeholder="Mobile Number" className="flex-1 min-w-0 bg-transparent border-y-2 border-r-2 border-[var(--color-paper)] px-4 py-4 text-xl font-bold outline-none placeholder:text-gray-500" />
+            <button className="bg-[var(--color-saffron)] text-[var(--color-charcoal)] font-[var(--font-anton)] text-lg sm:text-xl tracking-wider uppercase px-4 sm:px-6 py-4 border-2 border-[var(--color-paper)] hard-shadow-hover hover:bg-[var(--color-ember)] transition-colors shrink-0">
               Get App
             </button>
           </div>

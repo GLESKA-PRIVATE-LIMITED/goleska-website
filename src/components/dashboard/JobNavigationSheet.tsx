@@ -63,14 +63,14 @@ export default function JobNavigationSheet({
         </div>
 
         <div className="px-6 pb-8 flex-1 overflow-y-auto">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <h2 className="font-[var(--font-anton)] text-4xl uppercase leading-none mb-1">{jobTitle}</h2>
-              <p className="font-bold text-gray-500 text-sm uppercase tracking-widest">{employerName}</p>
+          <div className="flex justify-between items-start mb-6 gap-3">
+            <div className="min-w-0">
+              <h2 className="font-[var(--font-anton)] text-3xl sm:text-4xl uppercase leading-none mb-1 break-words">{jobTitle}</h2>
+              <p className="font-bold text-gray-500 text-sm uppercase tracking-widest truncate">{employerName}</p>
             </div>
             <a 
               href={`tel:${employerPhone}`}
-              className="bg-black text-[var(--color-saffron)] p-4 rounded-full border-4 border-black hard-shadow-hover hover:scale-105 transition-transform"
+              className="bg-black text-[var(--color-saffron)] p-4 rounded-full border-4 border-black hard-shadow-hover hover:scale-105 transition-transform shrink-0"
             >
               <Phone size={24} fill="currentColor" />
             </a>

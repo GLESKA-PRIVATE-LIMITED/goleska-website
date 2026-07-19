@@ -112,16 +112,16 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-paper)] font-sans flex items-center justify-center p-6 selection:bg-[var(--color-saffron)] selection:text-white">
-      <div className="w-full max-w-2xl bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-8 relative">
+    <div className="min-h-screen bg-[var(--color-paper)] font-sans flex items-center justify-center p-4 sm:p-6 selection:bg-[var(--color-saffron)] selection:text-white">
+      <div className="w-full max-w-2xl bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-5 sm:p-8 relative">
         
         {/* Progress Indicator */}
         <div className="mb-8 border-b-2 border-[var(--color-charcoal)] pb-4">
-          <div className="flex justify-between items-end">
-            <h1 className="font-[var(--font-anton)] text-4xl uppercase tracking-wide">
+          <div className="flex justify-between items-end gap-3">
+            <h1 className="font-[var(--font-anton)] text-3xl sm:text-4xl uppercase tracking-wide">
               {currentStep === 1 ? 'Choose Account' : 'Profile Setup'}
             </h1>
-            <span className="font-bold text-[var(--color-charcoal)]">Step {currentStep}</span>
+            <span className="font-bold text-[var(--color-charcoal)] shrink-0">Step {currentStep}</span>
           </div>
         </div>
 
