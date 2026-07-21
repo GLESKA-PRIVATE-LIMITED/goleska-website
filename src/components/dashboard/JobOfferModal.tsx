@@ -28,7 +28,7 @@ export default function JobOfferModal({ workerId, jwtToken, onJobAccepted }: Job
           table: 'job_matches',
           filter: `worker_id=eq.${workerId}`
         },
-        async (payload) => {
+        async (payload: any) => {
           if (payload.new && payload.new.status === 'PENDING') {
             // Fetch job details (title, employer name, salary) via a quick fetch or edge function
             // For MVP, we will fetch full job details from backend if we get a match

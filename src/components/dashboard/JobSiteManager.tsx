@@ -59,15 +59,15 @@ export default function JobSiteManager() {
         },
         body: JSON.stringify({
           name: newSite.name,
-          latitude: parseFloat(newSite.latitude),
-          longitude: parseFloat(newSite.longitude)
+          latitude: newSite.latitude,
+          longitude: newSite.longitude
         })
       });
       
       if (!res.ok) throw new Error('Failed to create job site');
       const created = await res.json();
       setJobSites([...jobSites, created]);
-      setNewSite({ name: '', latitude: '', longitude: '' });
+      setNewSite({ name: '', latitude: null, longitude: null });
     } catch (err: any) {
       setError(err.message);
     } finally {
