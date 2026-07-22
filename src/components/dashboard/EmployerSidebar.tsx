@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Menu, Plus, Search, Settings, LogOut, MapPin, Zap, MessageSquare } from 'lucide-react';
+import { Menu, Plus, Search, Settings, ShieldCheck, LogOut, MapPin, Zap, MessageSquare } from 'lucide-react';
 
 interface Props {
   jobSites: any[];
   onNewChat: () => void;
   onSelectSite: (id: string) => void;
   onOpenProfile: () => void;
+  onOpenSecurity: () => void;
   onSignOut: () => void;
 }
 
@@ -18,7 +19,7 @@ interface Props {
  *  - expanded: "New chat" / "Search chats" buttons + a "Recents" list (the employer's job sites).
  * Defaults expanded on desktop (>= lg) and collapsed on smaller screens.
  */
-export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onOpenProfile, onSignOut }: Props) {
+export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onOpenProfile, onOpenSecurity, onSignOut }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -121,6 +122,12 @@ export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onO
               <Settings size={18} /> Settings
             </button>
             <button
+              onClick={onOpenSecurity}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            >
+              <ShieldCheck size={18} /> Security
+            </button>
+            <button
               onClick={onSignOut}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-600"
             >
@@ -135,6 +142,13 @@ export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onO
               title="Settings"
             >
               <Settings size={20} />
+            </button>
+            <button
+              onClick={onOpenSecurity}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
+              title="Security"
+            >
+              <ShieldCheck size={20} />
             </button>
             <button
               onClick={onSignOut}

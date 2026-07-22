@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { LogOut, Zap, Loader2, CheckCircle, Clock, MapPin, ArrowRight, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
 
 import ProfileView from '@/components/dashboard/ProfileView';
+import SecurityView from '@/components/dashboard/SecurityView';
 import JobSiteManager from '@/components/dashboard/JobSiteManager';
 import SubscriptionModal from '@/components/payments/SubscriptionModal';
 import WorkerDashboard from '@/components/dashboard/WorkerDashboard';
@@ -23,7 +24,7 @@ interface ParsedJob {
   min_experience: number;
 }
 
-type Tab = 'DISPATCH' | 'JOB_SITES' | 'PROFILE';
+type Tab = 'DISPATCH' | 'JOB_SITES' | 'PROFILE' | 'SECURITY';
 
 const labelCls = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500';
 const inputCls = 'w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100';
@@ -373,6 +374,7 @@ export default function DashboardPage() {
         onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
         onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
         onOpenProfile={() => setActiveTab('PROFILE')}
+        onOpenSecurity={() => setActiveTab('SECURITY')}
         onSignOut={signOut}
       />
 
@@ -590,6 +592,13 @@ export default function DashboardPage() {
         {activeTab === 'PROFILE' && (
           <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
             <ProfileView userType={userType} profileData={profileData} />
+          </div>
+        )}
+
+        {/* ---- SECURITY ---- */}
+        {activeTab === 'SECURITY' && (
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <SecurityView userType={userType} profileData={profileData} />
           </div>
         )}
       </main>
