@@ -8,10 +8,45 @@ import BusinessDetailsForm from '@/components/onboarding/BusinessDetailsForm';
 import KYCVerificationForm from '@/components/onboarding/KYCVerificationForm';
 import UnregisteredBusinessForm from '@/components/onboarding/UnregisteredBusinessForm';
 import EmployeeForm from '@/components/onboarding/EmployeeForm';
-import { Loader2 } from 'lucide-react';
+import OnboardingSidePanel from '@/components/onboarding/OnboardingSidePanel';
+import { Loader2, Zap, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export type AccountType = 'REGISTERED_BUSINESS' | 'REGISTERED_INDUSTRY' | 'UNREGISTERED_BUSINESS' | 'EMPLOYEE' | 'INDIVIDUAL' | null;
+
+function StepIndicator({ current }: { current: number }) {
+  const steps = ['Account', 'Details', 'Verify'];
+  return (
+    <div className="mb-8 flex items-start">
+      {steps.map((label, i) => {
+        const n = i + 1;
+        const done = current > n;
+        const active = current === n;
+        return (
+          <React.Fragment key={label}>
+            <div className="flex flex-col items-center">
+              <div
+                className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition ${
+                  active || done
+                    ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/30'
+                    : 'bg-slate-100 text-slate-400'
+                }`}
+              >
+                {done ? <Check size={16} /> : n}
+              </div>
+              <span className={`mt-2 text-[11px] font-semibold ${active || done ? 'text-slate-700' : 'text-slate-400'}`}>
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={`mt-[18px] h-0.5 flex-1 rounded ${current > n ? 'bg-indigo-500' : 'bg-slate-200'}`} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const { session, user, loading } = useAuth();
@@ -108,78 +143,93 @@ export default function OnboardingPage() {
   };
 
   if (false) {
-    return <div className="min-h-screen bg-[var(--color-paper)] flex items-center justify-center font-[var(--font-anton)] text-3xl">LOADING...</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-[#eef1fb] text-2xl font-extrabold text-slate-900">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-paper)] font-sans flex items-center justify-center p-4 sm:p-6 selection:bg-[var(--color-saffron)] selection:text-white">
-      <div className="w-full max-w-2xl bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-5 sm:p-8 relative">
-        
-        {/* Progress Indicator */}
-        <div className="mb-8 border-b-2 border-[var(--color-charcoal)] pb-4">
-          <div className="flex justify-between items-end gap-3">
-            <h1 className="font-[var(--font-anton)] text-3xl sm:text-4xl uppercase tracking-wide">
-              {currentStep === 1 ? 'Choose Account' : 'Profile Setup'}
-            </h1>
-            <span className="font-bold text-[var(--color-charcoal)] shrink-0">Step {currentStep}</span>
+    <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
+      <OnboardingSidePanel />
+
+      <main className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:p-10">
+        <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl shadow-slate-300/40 sm:p-8">
+
+          {/* Mobile brand (side panel is hidden below lg) */}
+          <div className="mb-6 flex items-center gap-2 lg:hidden">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
+              <Zap size={18} className="text-white" fill="currentColor" />
+            </div>
+            <span className="font-[var(--font-anton)] text-xl uppercase tracking-wider text-slate-900">GO LESKA</span>
           </div>
+
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
+              {currentStep === 1 ? (
+                <>Choose your <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">account</span></>
+              ) : (
+                <>Complete your <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">profile</span></>
+              )}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {currentStep === 1 ? 'Tell us who you are to get started.' : 'Just a few details and a quick verification.'}
+            </p>
+          </div>
+
+          {/* Step indicator - shown during the multi-step form / KYC stages */}
+          {currentStep >= 2 && <StepIndicator current={currentStep} />}
+
+          {/* Wizard Steps */}
+          {currentStep === 1 && (
+            <AccountTypeSelector 
+              selectedType={accountType} 
+              initialSide={initialSide}
+              onSelect={(type) => {
+                setAccountType(type);
+                nextStep();
+              }} 
+            />
+          )}
+
+          {currentStep === 2 && (accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') && (
+            <BusinessDetailsForm 
+              formData={formData} 
+              updateFormData={updateFormData} 
+              onNext={nextStep} 
+              onBack={prevStep} 
+            />
+          )}
+
+          {currentStep === 2 && accountType === 'UNREGISTERED_BUSINESS' && (
+            <UnregisteredBusinessForm
+              formData={formData} 
+              updateFormData={updateFormData} 
+              onComplete={nextStep} 
+              onBack={prevStep} 
+            />
+          )}
+
+          {currentStep === 2 && (accountType === 'EMPLOYEE' || accountType === 'INDIVIDUAL') && (
+            <EmployeeForm
+              accountType={accountType}
+              formData={formData} 
+              updateFormData={updateFormData} 
+              onComplete={nextStep} 
+              onBack={prevStep} 
+            />
+          )}
+
+          {currentStep === 3 && (
+            <KYCVerificationForm 
+              accountType={accountType}
+              formData={formData} 
+              updateFormData={updateFormData} 
+              onComplete={() => router.push('/dashboard')} 
+              onBack={prevStep} 
+            />
+          )}
+
         </div>
-
-        {/* Wizard Steps */}
-        {currentStep === 1 && (
-          <AccountTypeSelector 
-            selectedType={accountType} 
-            initialSide={initialSide}
-            onSelect={(type) => {
-              setAccountType(type);
-              nextStep();
-            }} 
-          />
-        )}
-
-        {/* REGISTERED BUSINESS / INDUSTRY FLOW */}
-        {currentStep === 2 && (accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') && (
-          <BusinessDetailsForm 
-            formData={formData} 
-            updateFormData={updateFormData} 
-            onNext={nextStep} 
-            onBack={prevStep} 
-          />
-        )}
-        
-        {/* UNREGISTERED BUSINESS FLOW */}
-        {currentStep === 2 && accountType === 'UNREGISTERED_BUSINESS' && (
-          <UnregisteredBusinessForm
-            formData={formData} 
-            updateFormData={updateFormData} 
-            onComplete={nextStep} 
-            onBack={prevStep} 
-          />
-        )}
-
-        {/* EMPLOYEE & INDIVIDUAL FLOW */}
-        {currentStep === 2 && (accountType === 'EMPLOYEE' || accountType === 'INDIVIDUAL') && (
-          <EmployeeForm
-            accountType={accountType}
-            formData={formData} 
-            updateFormData={updateFormData} 
-            onComplete={nextStep} 
-            onBack={prevStep} 
-          />
-        )}
-
-        {/* UNIFIED KYC STEP 3 (All Account Types) */}
-        {currentStep === 3 && (
-          <KYCVerificationForm 
-            accountType={accountType}
-            formData={formData} 
-            updateFormData={updateFormData} 
-            onComplete={() => router.push('/dashboard')} 
-            onBack={prevStep} 
-          />
-        )}
-
-      </div>
+      </main>
     </div>
   );
 }
