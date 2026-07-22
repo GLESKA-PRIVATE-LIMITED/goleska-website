@@ -2,17 +2,13 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
 import {
   ShieldCheck,
   ShieldAlert,
   Mail,
   Calendar,
-  KeyRound,
-  Smartphone,
   Monitor,
   LogOut,
-  Lock,
 } from 'lucide-react';
 
 interface Props {
@@ -33,18 +29,11 @@ function formatDate(value?: string): string {
 export default function SecurityView({ profileData }: Props) {
   const { user, signOut } = useAuth();
 
-  // NOTE ON WHAT IS REAL vs PLACEHOLDER (kept intentionally honest):
-  //  - REAL: verification status (profileData.is_verified), email, and member-since
-  //    (profileData.created_at), plus the current session + Sign out (Supabase).
-  //  - PLACEHOLDER (non-functional, "Coming soon" toasts): password change and 2FA -
-  //    there is no backend endpoint for these yet, so we do NOT fake an API call.
-  //  - OMITTED: "other devices" / "trusted devices" listing - the Supabase client
-  //    setup here exposes no way to enumerate other sessions, so we only show the
-  //    current session rather than inventing fake device rows.
-
+  // Only real, backend-backed security info is rendered here. Anything without
+  // real backend support (password change, 2FA, other-device session listing)
+  // is intentionally NOT rendered - we will add it back once the backend
+  // supports it, rather than showing a disabled/coming-soon stub.
   const isVerified = Boolean(profileData?.is_verified);
-
-  const comingSoon = (feature: string) => toast(`${feature} is coming soon.`);
 
   return (
     <div className="space-y-6">
@@ -94,55 +83,6 @@ export default function SecurityView({ profileData }: Props) {
         </div>
       </div>
 
-      {/* Password & Authentication (PLACEHOLDER - non-functional) */}
-      <div className={cardCls}>
-        <h3 className={cardTitleCls}>Password &amp; Authentication</h3>
-        <div className="space-y-3">
-          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600">
-                <KeyRound size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-800">Password</p>
-                <p className="text-xs text-slate-500">Update the password used to sign in to your account.</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => comingSoon('Password change')}
-              className="shrink-0 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-            >
-              Change Password
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600">
-                <Smartphone size={18} />
-              </div>
-              <div>
-                <p className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                  Two-Factor Authentication
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                    Coming soon
-                  </span>
-                </p>
-                <p className="text-xs text-slate-500">Add an extra layer of security with a one-time code.</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => comingSoon('Two-factor authentication')}
-              className="shrink-0 rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-400"
-            >
-              Enable 2FA
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Active Sessions (current session is REAL; other-device listing omitted) */}
       <div className={cardCls}>
         <h3 className={cardTitleCls}>Active Sessions</h3>
@@ -161,11 +101,6 @@ export default function SecurityView({ profileData }: Props) {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active now
           </span>
         </div>
-
-        {/* Placeholder note: enumerating/revoking other devices is not available yet. */}
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
-          <Lock size={12} /> Viewing and managing sessions on other devices is coming soon.
-        </p>
 
         <button
           type="button"
