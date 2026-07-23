@@ -82,17 +82,18 @@ export default function AccountTypeSelector({ selectedType, onSelect, initialSid
     }
   }, [initialSide]);
 
-  const options = side === 'WORKER' ? workerOptions : employerOptions;
+  // Employers see all 5 account types; workers keep their 2-option subset.
+  const options = side === 'WORKER' ? workerOptions : [...employerOptions, ...workerOptions];
 
   return (
     <div className="flex min-h-screen w-full bg-[#eef1fb] font-sans text-slate-900">
       {/* LEFT: options */}
       <div className="flex w-full flex-col px-5 py-8 sm:px-10 lg:w-1/2 lg:px-14 lg:py-12">
         <Link
-          href="/"
+          href="/login"
           className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-slate-500 transition hover:text-indigo-600"
         >
-          <ArrowLeft size={16} /> Back to Home
+          <ArrowLeft size={16} /> Back to Login
         </Link>
 
         <div className="flex flex-1 flex-col justify-center py-8">
