@@ -3,44 +3,52 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Clock, ShieldCheck, MapPin, Zap, IndianRupee } from 'lucide-react';
+import LanguageSelector from '@/components/landing/LanguageSelector';
+import ThemeToggle from '@/components/landing/ThemeToggle';
+
+const TICKER_ITEMS = ['AI Dispatch', '60 Second Match', 'Aadhaar Verified', 'Daily Payouts', '12 Languages'];
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#eef1fb] font-sans text-slate-900 selection:bg-indigo-500 selection:text-white">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#eef1fb] font-sans text-slate-900 selection:bg-indigo-500 selection:text-white dark:bg-slate-950 dark:text-slate-100">
 
       {/* STICKY NAV */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur">
+      <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600">
             <Zap size={18} className="text-white" fill="currentColor" />
           </div>
-          <span className="font-[var(--font-anton)] text-2xl uppercase tracking-wide text-slate-900">GO LESKA</span>
+          <span className="font-[var(--font-anton)] text-2xl uppercase tracking-wide text-slate-900 dark:text-white">GO LESKA</span>
         </div>
-        <div className="hidden gap-8 text-sm font-semibold text-slate-600 md:flex">
-          <Link href="#how" className="transition-colors hover:text-indigo-600">How it works</Link>
-          <Link href="#worker" className="transition-colors hover:text-indigo-600">For Workers</Link>
-          <Link href="#employer" className="transition-colors hover:text-indigo-600">For Employers</Link>
-          <Link href="#trades" className="transition-colors hover:text-indigo-600">Trades</Link>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="hidden gap-8 text-sm font-semibold text-slate-600 md:flex dark:text-slate-300">
+            <Link href="#how" className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">How it works</Link>
+            <Link href="#worker" className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">For Workers</Link>
+            <Link href="#employer" className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">For Employers</Link>
+            <Link href="#trades" className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">Trades</Link>
+          </div>
+          <LanguageSelector />
+          <ThemeToggle />
         </div>
       </nav>
 
       {/* HERO SECTION */}
       <section className="relative mx-auto flex max-w-7xl flex-col items-center gap-10 px-6 py-16 sm:py-24 md:flex-row md:gap-12 md:py-28">
         <div className="relative z-10 w-full flex-1 space-y-7">
-          <div className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+          <div className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300">
             The Blue Collar Army
           </div>
-          <h1 className="font-[var(--font-anton)] text-5xl uppercase leading-[0.95] tracking-wide text-slate-900 sm:text-6xl md:text-8xl">
+          <h1 className="font-[var(--font-anton)] text-5xl uppercase leading-[0.95] tracking-wide text-slate-900 sm:text-6xl md:text-8xl dark:text-white">
             Kaam Milega.<br /><span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Turant.</span>
           </h1>
-          <p className="max-w-xl text-lg font-medium leading-relaxed text-slate-600 md:text-xl">
+          <p className="max-w-xl text-lg font-medium leading-relaxed text-slate-600 md:text-xl dark:text-slate-300">
             India&apos;s blue-collar army deserves better than waiting at the chowk. GO LESKA matches verified workers to real jobs in <span className="font-bold text-indigo-600">60 seconds</span> - powered by AI, built for the factory floor.
           </p>
           <div className="flex flex-col gap-4 pt-2 sm:flex-row">
             <Link href="/login?type=worker" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700">
               I want work <ArrowRight size={20} />
             </Link>
-            <Link href="/login?type=employer" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            <Link href="/login?type=employer" className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
               I need workers <ArrowRight size={20} />
             </Link>
           </div>
@@ -64,26 +72,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TICKER */}
+      {/* TICKER - seamless auto-sliding marquee (content duplicated 2x, animated -50%) */}
       <div className="relative flex w-full overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 py-4">
-        <div className="flex animate-[scroll_20s_linear_infinite] whitespace-nowrap font-[var(--font-anton)] text-2xl uppercase tracking-widest text-white">
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> AI DISPATCH</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> 60 SECOND MATCH</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> AADHAAR VERIFIED</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> DAILY PAYOUTS</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> 12 LANGUAGES</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> AI DISPATCH</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> 60 SECOND MATCH</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> AADHAAR VERIFIED</span>
-          <span className="mx-8"><span className="text-amber-300">&#9733;</span> DAILY PAYOUTS</span>
+        <div className="flex w-max shrink-0 animate-[scroll_20s_linear_infinite] items-center whitespace-nowrap font-[var(--font-anton)] text-2xl uppercase tracking-widest text-white">
+          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            <span key={i} className="mx-8 flex items-center gap-2">
+              <span className="text-amber-300">&#9733;</span> {item}
+            </span>
+          ))}
         </div>
       </div>
 
       {/* HOW IT WORKS */}
       <section id="how" className="mx-auto max-w-7xl px-6 py-20 sm:py-24">
         <div className="mb-14 text-center">
-          <h2 className="font-[var(--font-anton)] text-4xl uppercase tracking-wide text-slate-900 sm:text-5xl md:text-6xl">The 60-second hiring cycle</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-600">Inspired by Ola/Uber dispatch, rebuilt for India&apos;s industrial workforce. From &quot;I need workers&quot; to &quot;workers on the way&quot; - under a minute.</p>
+          <h2 className="font-[var(--font-anton)] text-4xl uppercase tracking-wide text-slate-900 sm:text-5xl md:text-6xl dark:text-white">The 60-second hiring cycle</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg font-medium text-slate-600 dark:text-slate-400">Inspired by Ola/Uber dispatch, rebuilt for India&apos;s industrial workforce. From &quot;I need workers&quot; to &quot;workers on the way&quot; - under a minute.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-5">
@@ -94,10 +98,10 @@ export default function LandingPage() {
             { step: "4", title: "Worker Pinged", desc: "Gets 30s to accept the job card." },
             { step: "5", title: "Nav Starts", desc: "GPS routing directly to factory." }
           ].map((s, i) => (
-            <div key={i} className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div key={i} className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 font-[var(--font-anton)] text-xl text-white">{s.step}</span>
-              <h3 className="mt-4 text-lg font-bold text-slate-900">{s.title}</h3>
-              <p className="mt-2 text-sm text-slate-500">{s.desc}</p>
+              <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{s.title}</h3>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -146,15 +150,15 @@ export default function LandingPage() {
       {/* FOR EMPLOYERS */}
       <section id="employer" className="mx-auto flex max-w-7xl flex-col items-center gap-14 px-6 py-20 sm:py-24 lg:flex-row-reverse">
         <div className="flex-1 space-y-5">
-          <h2 className="font-[var(--font-anton)] text-5xl uppercase leading-none text-slate-900 sm:text-6xl lg:text-7xl">Bolo.<br />AI samajhega.<br />Workers aayenge.</h2>
-          <p className="text-lg font-medium text-slate-600">Type or speak in any Indian language. Our LLM extracts skills, experience, salary and radius. Pick Autonomous AI dispatch or review candidates manually.</p>
+          <h2 className="font-[var(--font-anton)] text-5xl uppercase leading-none text-slate-900 sm:text-6xl lg:text-7xl dark:text-white">Bolo.<br />AI samajhega.<br />Workers aayenge.</h2>
+          <p className="text-lg font-medium text-slate-600 dark:text-slate-400">Type or speak in any Indian language. Our LLM extracts skills, experience, salary and radius. Pick Autonomous AI dispatch or review candidates manually.</p>
         </div>
 
         <div className="w-full flex-1">
           {/* AI NLP Prompt Card */}
-          <div className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200">
+          <div className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
             <div className="absolute -top-3 left-6 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-white">LLM Dispatch Engine</div>
-            <p className="mt-4 rounded-xl border-l-4 border-indigo-500 bg-slate-50 p-4 text-base italic text-slate-600">
+            <p className="mt-4 rounded-xl border-l-4 border-indigo-500 bg-slate-50 p-4 text-base italic text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               &quot;Mujhe 5 fiber laser operators chahiye, kam se kam 3 saal experience, Hindi-English aata ho, salary &#8377;800/day, 10km radius mein.&quot;
             </p>
             <div className="mt-6 grid grid-cols-2 gap-3">
@@ -183,12 +187,12 @@ export default function LandingPage() {
       </section>
 
       {/* TRADES WALL */}
-      <section id="trades" className="border-y border-slate-200 bg-white px-6 py-20 sm:py-24">
+      <section id="trades" className="border-y border-slate-200 bg-white px-6 py-20 sm:py-24 dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto max-w-7xl">
-          <h2 className="mb-10 text-center font-[var(--font-anton)] text-4xl uppercase text-slate-900 sm:text-5xl md:text-6xl">38 Trades. One Army.</h2>
+          <h2 className="mb-10 text-center font-[var(--font-anton)] text-4xl uppercase text-slate-900 sm:text-5xl md:text-6xl dark:text-white">38 Trades. One Army.</h2>
           <div className="flex flex-wrap justify-center gap-3">
             {['Welder', 'Fitter', 'CNC Operator', 'Forklift Driver', 'Electrician', 'Plumber', 'Mason', 'Painter', 'Carpenter', 'Machine Operator', 'Packer', 'Loader', 'Security Guard', 'Housekeeping', 'Cook'].map((trade) => (
-              <div key={trade} className="cursor-default rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 font-[var(--font-anton)] text-lg uppercase text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700">
+              <div key={trade} className="cursor-default rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 font-[var(--font-anton)] text-lg uppercase text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300">
                 {trade}
               </div>
             ))}
@@ -201,10 +205,10 @@ export default function LandingPage() {
 
       {/* MANIFESTO */}
       <section className="mx-auto max-w-4xl space-y-6 px-6 py-24 text-center sm:py-28">
-        <p className="font-[var(--font-anton)] text-4xl uppercase leading-[0.95] text-slate-900 sm:text-5xl md:text-7xl">
+        <p className="font-[var(--font-anton)] text-4xl uppercase leading-[0.95] text-slate-900 sm:text-5xl md:text-7xl dark:text-white">
           India was not built by spreadsheets.
         </p>
-        <p className="mx-auto inline-block max-w-2xl rounded-2xl bg-indigo-50 px-6 py-4 text-xl font-medium leading-relaxed text-indigo-900/80">
+        <p className="mx-auto inline-block max-w-2xl rounded-2xl bg-indigo-50 px-6 py-4 text-xl font-medium leading-relaxed text-indigo-900/80 dark:bg-indigo-950/40 dark:text-indigo-200">
           It was built by hands, by sweat, by people who show up at 5 AM with a tiffin and a tool bag. They deserve technology that respects them.
         </p>
       </section>
