@@ -483,16 +483,22 @@ export default function DashboardPage() {
         {activeTab === 'DISPATCH' && (
           <div className="mx-auto max-w-3xl px-4 py-10 sm:px-8">
             {/* Hero */}
-            <div className="text-center">
-              {(!isRegBusiness || !sidebarExpanded) && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
-                  <Sparkles size={13} /> AI - Powered Hiring
-                </div>
-              )}
-              <h1 className="mt-4 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl">
-                Hey {displayName}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Who are you hiring today??</span>
-              </h1>
-              <p className="mt-2 text-sm text-slate-500 sm:text-base">Ask GO LESKA to find talent, vendors, or manage your hiring</p>
+            <div className="relative">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-1/2 top-0 h-56 w-[34rem] max-w-full -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-200/50 via-blue-200/40 to-transparent blur-3xl"
+              />
+              <div className="relative z-10 text-center">
+                {(!isRegBusiness || !sidebarExpanded) && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+                    <Sparkles size={13} /> AI - Powered Hiring
+                  </div>
+                )}
+                <h1 className="mt-4 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl">
+                  Hey {displayName}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">who do you need on-site today?</span>
+                </h1>
+                <p className="mt-2 text-sm text-slate-500 sm:text-base">Ask GO LESKA to find talent, vendors, or manage your hiring</p>
+              </div>
             </div>
 
             {/* Segmented input + existing form fields (same state/handlers) */}
