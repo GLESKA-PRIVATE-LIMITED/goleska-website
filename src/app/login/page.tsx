@@ -42,25 +42,39 @@ function LoginPageInner() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length < 10) {
-      setError('Please enter a valid 10-digit mobile number.');
+    setError('');
+
+    // Client-side validation - never let malformed input reach the backend/Twilio.
+    const phoneRegex = /^\d{10}$/; // 10 digits (the +91 is a fixed visual prefix)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!phoneRegex.test(phone.trim())) {
+      setError('Please enter a valid 10-digit phone number.');
       return;
     }
-    if (!email || !email.includes('@')) {
+    if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address.');
       return;
     }
-    
+
     setLoading(true);
-    setError('');
-    
-    const { error: signInError } = await signInWithOtp(phone);
-    
-    if (signInError) {
-      setError(signInError.message);
-      setLoading(false);
-    } else {
+
+    try {
+      const { error: signInError } = await signInWithOtp(phone);
+
+      if (signInError) {
+        // Don't surface raw Twilio/Supabase error text to the user.
+        console.error('signInWithOtp failed:', signInError);
+        setError('Something went wrong, please try again.');
+        setLoading(false);
+        return;
+      }
+
       setStep('OTP');
+      setLoading(false);
+    } catch (err) {
+      console.error('signInWithOtp threw:', err);
+      setError('Something went wrong, please try again.');
       setLoading(false);
     }
   };
