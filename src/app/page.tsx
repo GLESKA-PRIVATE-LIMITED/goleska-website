@@ -56,7 +56,7 @@ export default function LandingPage() {
 
         {/* HERO IMAGE / INTERACTIVE COMPONENT */}
         <div className="relative h-[360px] w-full flex-1 overflow-hidden rounded-2xl shadow-xl shadow-slate-300/50 sm:h-[440px] md:h-[500px]">
-          <img src="/welder.png" alt="Indian Welder" className="absolute inset-0 h-full w-full object-cover" />
+          <img src="/hero.jpg" alt="Industrial workers at a refinery at sunset" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-900/70 to-transparent"></div>
 
           {/* 60s Match Card Overlay */}
