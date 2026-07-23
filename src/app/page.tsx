@@ -59,14 +59,12 @@ export default function LandingPage() {
           <img src="/hero.jpg" alt="Industrial workers at a refinery at sunset" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-900/70 to-transparent"></div>
 
-          {/* 60s Match Card Overlay */}
-          <div className="absolute bottom-6 left-6 right-6 z-20 flex items-center gap-4 rounded-xl bg-white/95 p-4 shadow-lg backdrop-blur">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-              <ShieldCheck />
+          {/* Match badge overlay */}
+          <div className="absolute bottom-6 left-6 z-20 inline-flex w-max max-w-[calc(100%-3rem)] items-center gap-3 rounded-full bg-white/95 py-2 pl-2 pr-5 shadow-lg backdrop-blur">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+              <ShieldCheck size={18} />
             </div>
-            <div>
-              <p className="flex items-center gap-1 text-sm font-medium text-slate-600"><Clock size={14} /> Accepted job in 14s</p>
-            </div>
+            <span className="text-sm font-bold text-slate-900">Matched &amp; Verified in 14 Seconds</span>
           </div>
         </div>
       </section>
