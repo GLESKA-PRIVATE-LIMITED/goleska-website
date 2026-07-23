@@ -13,8 +13,12 @@ import SubscriptionModal from '@/components/payments/SubscriptionModal';
 import WorkerDashboard from '@/components/dashboard/WorkerDashboard';
 import JobOfferModal from '@/components/dashboard/JobOfferModal';
 import ArrivalNotifier from '@/components/dashboard/ArrivalNotifier';
-import EmployerSidebar from '@/components/dashboard/EmployerSidebar';
-import SelectLocationModal from '@/components/dashboard/SelectLocationModal';
+import AdminSidebar from '@/components/dashboard/AdminSidebar';
+import DashboardOverview from '@/components/dashboard/DashboardOverview';
+import ReportsView from '@/components/dashboard/ReportsView';
+import CompanyProfileView from '@/components/dashboard/CompanyProfileView';
+import DirectorProfileView from '@/components/dashboard/DirectorProfileView';
+import LocationSelectionView from '@/components/dashboard/LocationSelectionView';
 import { toast } from 'sonner';
 
 interface ParsedJob {
@@ -24,7 +28,7 @@ interface ParsedJob {
   min_experience: number;
 }
 
-type Tab = 'DISPATCH' | 'JOB_SITES' | 'PROFILE' | 'SECURITY';
+type Tab = 'OVERVIEW' | 'DISPATCH' | 'WORKERS' | 'JOB_SITES' | 'REPORTS' | 'COMPANY' | 'DIRECTOR' | 'PROFILE' | 'SECURITY' | 'LOCATION';
 
 const labelCls = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500';
 const inputCls = 'w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100';
@@ -36,7 +40,7 @@ export default function DashboardPage() {
   const [checking, setChecking] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
   const [userType, setUserType] = useState<'EMPLOYER' | 'WORKER'>('EMPLOYER');
-  const [activeTab, setActiveTab] = useState<Tab>('DISPATCH');
+  const [activeTab, setActiveTab] = useState<Tab>('OVERVIEW');
   
   const [prompt, setPrompt] = useState('');
   const [parsing, setParsing] = useState(false);
@@ -53,7 +57,6 @@ export default function DashboardPage() {
   const [jobSites, setJobSites] = useState<any[]>([]);
   const [selectedJobSiteId, setSelectedJobSiteId] = useState<string>('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
   const [workerJobsRefreshKey, setWorkerJobsRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -369,12 +372,13 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
-      <EmployerSidebar
-        jobSites={jobSites}
-        onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
-        onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
-        onOpenProfile={() => setActiveTab('PROFILE')}
-        onOpenSecurity={() => setActiveTab('SECURITY')}
+      <AdminSidebar
+        active={activeTab}
+        companyName={displayName}
+        onNavigate={(tab) => {
+          if (tab === 'DISPATCH') { setParsedJob(null); setFormRole(''); }
+          setActiveTab(tab as Tab);
+        }}
         onSignOut={signOut}
       />
 
@@ -390,6 +394,63 @@ export default function DashboardPage() {
             </span>
           )}
         </div>
+
+        {/* ---- OVERVIEW ---- (default employer landing) */}
+        {activeTab === 'OVERVIEW' && (
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <DashboardOverview
+              profileData={profileData}
+              activeJobId={activeJobId}
+              onOpenReports={() => setActiveTab('REPORTS')}
+              onPostJob={() => setActiveTab('DISPATCH')}
+            />
+          </div>
+        )}
+
+        {/* ---- WORKERS ---- (real: workers accepted on the live dispatch) */}
+        {activeTab === 'WORKERS' && (
+          <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <div className="mb-6">
+              <h1 className="text-2xl font-extrabold text-slate-900">Workers</h1>
+              <p className="mt-1 text-sm text-slate-500">Workers currently engaged on your active dispatch.</p>
+            </div>
+            {!activeJobId ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                  <Users size={26} />
+                </div>
+                <p className="text-sm font-bold text-slate-700">No active dispatch</p>
+                <p className="max-w-sm text-xs text-slate-400">Post a job to start matching with available workers. Accepted workers will appear here live.</p>
+                <button
+                  onClick={() => setActiveTab('DISPATCH')}
+                  className="mt-2 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700"
+                >
+                  Post a Job <ArrowRight size={16} />
+                </button>
+              </div>
+            ) : matches.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+                <Loader2 className="animate-spin text-indigo-600" size={40} />
+                <p className="text-sm font-medium text-slate-500">Waiting for workers to accept...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {matches.map((match, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                      <CheckCircle size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900">Worker #{match.worker_id.substring(0, 6)}</p>
+                      <p className="text-xs text-slate-500">Engaged on current dispatch</p>
+                    </div>
+                    <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Accepted</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ---- DISPATCH ---- */}
         {activeTab === 'DISPATCH' && (
@@ -435,7 +496,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setShowLocationModal(true)}
+                  onClick={() => setActiveTab('LOCATION')}
                   className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-left text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15"><MapPin size={20} /></div>
@@ -601,13 +662,38 @@ export default function DashboardPage() {
             <SecurityView userType={userType} profileData={profileData} />
           </div>
         )}
-      </main>
 
-      <SelectLocationModal
-        isOpen={showLocationModal}
-        onClose={() => setShowLocationModal(false)}
-        onSelect={(lat, lng) => toast.success(`Location set (${lat.toFixed(3)}, ${lng.toFixed(3)})`)}
-      />
+        {/* ---- REPORTS ---- (visual mockup) */}
+        {activeTab === 'REPORTS' && (
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <ReportsView />
+          </div>
+        )}
+
+        {/* ---- COMPANY PROFILE ---- (real data) */}
+        {activeTab === 'COMPANY' && (
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <CompanyProfileView profileData={profileData} />
+          </div>
+        )}
+
+        {/* ---- DIRECTOR PROFILE ---- (real data) */}
+        {activeTab === 'DIRECTOR' && (
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <DirectorProfileView profileData={profileData} />
+          </div>
+        )}
+
+        {/* ---- LOCATION ---- (dedicated page; reached from the dispatch "Select Location" pill) */}
+        {activeTab === 'LOCATION' && (
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <LocationSelectionView
+              jobSites={jobSites}
+              onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
+            />
+          </div>
+        )}
+      </main>
 
       <SubscriptionModal
         isOpen={showSubscriptionModal}
