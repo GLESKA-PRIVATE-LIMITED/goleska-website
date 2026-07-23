@@ -65,8 +65,7 @@ export default function LandingPage() {
               <ShieldCheck />
             </div>
             <div>
-              <p className="font-bold leading-tight text-slate-900">Suresh Kumar (Welder)</p>
-              <p className="flex items-center gap-1 text-sm text-slate-500"><Clock size={14} /> Accepted job in 14s</p>
+              <p className="flex items-center gap-1 text-sm font-medium text-slate-600"><Clock size={14} /> Accepted job in 14s</p>
             </div>
           </div>
         </div>
