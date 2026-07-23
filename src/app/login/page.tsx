@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -16,6 +25,14 @@ export default function LoginPage() {
   
   const { signInWithOtp, verifyOtp } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  React.useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'worker' || type === 'employer') {
+      localStorage.setItem('onboardingSide', type === 'worker' ? 'WORKER' : 'EMPLOYER');
+    }
+  }, [searchParams]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +78,9 @@ export default function LoginPage() {
       // OTP verified successfully!
       // Save email for onboarding
       localStorage.setItem('onboardingEmail', email);
+      // [Onboarding Timer] Stamp signup start = OTP verification time.
+      localStorage.setItem('onboardingStartTime', Date.now().toString());
+      console.log('[Onboarding Timer] Started at OTP verification.');
       router.push('/onboarding');
     }
   };

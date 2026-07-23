@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, MapPin, Trash2, Plus, Navigation } from 'lucide-react';
 import MapPicker from './MapPicker';
+import { toast } from 'sonner';
 
 export default function JobSiteManager() {
   const { session } = useAuth();
@@ -58,15 +59,15 @@ export default function JobSiteManager() {
         },
         body: JSON.stringify({
           name: newSite.name,
-          latitude: parseFloat(newSite.latitude),
-          longitude: parseFloat(newSite.longitude)
+          latitude: newSite.latitude,
+          longitude: newSite.longitude
         })
       });
       
       if (!res.ok) throw new Error('Failed to create job site');
       const created = await res.json();
       setJobSites([...jobSites, created]);
-      setNewSite({ name: '', latitude: '', longitude: '' });
+      setNewSite({ name: '', latitude: null, longitude: null });
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -76,7 +77,7 @@ export default function JobSiteManager() {
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
+      toast.error("Geolocation is not supported by your browser.");
       return;
     }
     
@@ -92,7 +93,7 @@ export default function JobSiteManager() {
       },
       (err) => {
         console.error(err);
-        alert("Unable to retrieve your location. Please check browser permissions.");
+        toast.error("Unable to retrieve your location. Please check browser permissions.");
         setLocating(false);
       },
       { enableHighAccuracy: true }
@@ -110,10 +111,13 @@ export default function JobSiteManager() {
           'Authorization': `Bearer ${session?.access_token}`
         }
       });
-      if (!res.ok) throw new Error('Failed to delete');
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail || 'Failed to delete');
+      }
       setJobSites(jobSites.filter(s => s.id !== id));
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setDeletingId(null);
     }
@@ -195,11 +199,11 @@ export default function JobSiteManager() {
                >
                  {deletingId === site.id ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
                </button>
-               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-white border-2 border-[var(--color-charcoal)] flex items-center justify-center">
+               <div className="flex items-center gap-3 pr-12">
+                 <div className="w-10 h-10 bg-white border-2 border-[var(--color-charcoal)] flex items-center justify-center shrink-0">
                    <MapPin size={20} className="text-[var(--color-charcoal)]" />
                  </div>
-                 <h3 className="font-[var(--font-anton)] text-xl leading-tight">{site.name}</h3>
+                 <h3 className="font-[var(--font-anton)] text-xl leading-tight break-words min-w-0">{site.name}</h3>
                </div>
             </div>
           ))

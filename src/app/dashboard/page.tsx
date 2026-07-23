@@ -4,14 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { LogOut, Zap, Mic, Loader2, CheckCircle, Clock, MapPin, IndianRupee, ArrowRight, LayoutDashboard, Building, UserCircle } from 'lucide-react';
+import { LogOut, Zap, Mic, Loader2, CheckCircle, Clock, MapPin, IndianRupee, ArrowRight, LayoutDashboard, Building, UserCircle, XCircle } from 'lucide-react';
 
 import ProfileView from '@/components/dashboard/ProfileView';
 import JobSiteManager from '@/components/dashboard/JobSiteManager';
 import SubscriptionModal from '@/components/payments/SubscriptionModal';
 import WorkerDashboard from '@/components/dashboard/WorkerDashboard';
 import JobOfferModal from '@/components/dashboard/JobOfferModal';
-import JobNavigationSheet from '@/components/dashboard/JobNavigationSheet';
+import ArrivalNotifier from '@/components/dashboard/ArrivalNotifier';
+import { toast } from 'sonner';
 
 interface ParsedJob {
   title: string;
@@ -23,7 +24,7 @@ interface ParsedJob {
 type Tab = 'DISPATCH' | 'JOB_SITES' | 'PROFILE';
 
 export default function DashboardPage() {
-  const { session, user, signOut } = useAuth();
+  const { session, user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   
   const [checking, setChecking] = useState(true);
@@ -34,55 +35,105 @@ export default function DashboardPage() {
   const [prompt, setPrompt] = useState('');
   const [parsing, setParsing] = useState(false);
   const [parsedJob, setParsedJob] = useState<ParsedJob | null>(null);
+  // Form-based dispatch inputs (replaces the disabled LLM parsing flow).
+  const [formRole, setFormRole] = useState('');
+  const [formHeadcount, setFormHeadcount] = useState<number>(1);
+  const [formSalary, setFormSalary] = useState<number>(500);
+  const [formExperience, setFormExperience] = useState<number>(0);
   const [dispatching, setDispatching] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [matches, setMatches] = useState<any[]>([]);
   const [jobSites, setJobSites] = useState<any[]>([]);
   const [selectedJobSiteId, setSelectedJobSiteId] = useState<string>('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showNavigation, setShowNavigation] = useState(false);
+  const [workerJobsRefreshKey, setWorkerJobsRefreshKey] = useState(0);
 
   useEffect(() => {
+    // [Onboarding Timer] Start time is stamped at OTP verification (login page).
+    // When the user lands on the dashboard, log the total signup-to-dashboard
+    // duration once, then clear the marker.
+    const startRaw = typeof window !== 'undefined' ? localStorage.getItem('onboardingStartTime') : null;
+    if (startRaw) {
+      const elapsedMs = Date.now() - parseInt(startRaw, 10);
+      console.log(
+        `[Onboarding Timer] Reached dashboard in ${(elapsedMs / 1000).toFixed(1)}s (${elapsedMs} ms) from OTP verification.`
+      );
+      localStorage.removeItem('onboardingStartTime');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authLoading) return;
     if (!session) {
       router.push('/login');
       return;
     }
 
+    const tryEmployer = async (): Promise<'FOUND' | 'NOT_FOUND' | 'FORBIDDEN'> => {
+      const empRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (empRes.status === 403) return 'FORBIDDEN';
+      if (!empRes.ok) return 'NOT_FOUND';
+
+      const data = await empRes.json();
+      setProfileData(data);
+      setUserType('EMPLOYER');
+
+      // Fetch Job Sites
+      const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      if (siteRes.ok) {
+        const sites = await siteRes.json();
+        setJobSites(sites);
+        if (sites.length > 0) setSelectedJobSiteId(sites[0].id);
+      }
+      return 'FOUND';
+    };
+
+    const tryWorker = async (): Promise<'FOUND' | 'NOT_FOUND' | 'FORBIDDEN'> => {
+      const workerRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (workerRes.status === 403) return 'FORBIDDEN';
+      if (!workerRes.ok) return 'NOT_FOUND';
+
+      const data = await workerRes.json();
+      setProfileData(data);
+      setUserType('WORKER');
+      setActiveTab('PROFILE'); // Workers don't have dispatch yet
+      return 'FOUND';
+    };
+
     const checkProfile = async () => {
       try {
-        // Try to fetch employer profile via backend
-        const empRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
-          headers: { 'Authorization': `Bearer ${session.access_token}` }
-        });
-        
-        if (empRes.ok) {
-          const data = await empRes.json();
-          setProfileData(data);
-          setUserType('EMPLOYER');
-          
-          // Fetch Job Sites
-          const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
-            headers: { 'Authorization': `Bearer ${session.access_token}` }
-          });
-          if (siteRes.ok) {
-            const sites = await siteRes.json();
-            setJobSites(sites);
-            if (sites.length > 0) setSelectedJobSiteId(sites[0].id);
-          }
-        } else {
-          // Try worker profile
-          const workerRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me`, {
-            headers: { 'Authorization': `Bearer ${session.access_token}` }
-          });
-          
-          if (workerRes.ok) {
-            const data = await workerRes.json();
-            setProfileData(data);
-            setUserType('WORKER');
-            setActiveTab('PROFILE'); // Workers don't have dispatch yet
-          } else {
-            router.push('/onboarding');
-          }
+        // Respect the side chosen at login ("I want work" vs "I want workers")
+        // so a dual-registered email lands on the intended dashboard.
+        const savedSide = localStorage.getItem('onboardingSide');
+        const [first, second] = savedSide === 'WORKER' ? [tryWorker, tryEmployer] : [tryEmployer, tryWorker];
+
+        const firstResult = await first();
+        if (firstResult === 'FORBIDDEN') {
+          toast.error('Your account has been deactivated or deleted. Please contact support.');
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
+        if (firstResult === 'FOUND') return;
+
+        const secondResult = await second();
+        if (secondResult === 'FORBIDDEN') {
+          toast.error('Your account has been deactivated or deleted. Please contact support.');
+          await supabase.auth.signOut();
+          router.push('/login');
+          return;
+        }
+        if (secondResult !== 'FOUND') {
+          router.push('/onboarding');
         }
       } catch (err) {
         console.error(err);
@@ -110,6 +161,13 @@ export default function DashboardPage() {
         (payload) => {
           if (payload.new.status === 'ACCEPTED') {
             setMatches((prev) => [...prev, payload.new]);
+          } else if (payload.new.status === 'COMPLETED') {
+            // Job fully wrapped up (both arrival and completion confirmed by
+            // the employer) - clear the active dispatch panel.
+            toast.success('Job completed! Dispatch cleared.');
+            setActiveJobId(null);
+            setMatches([]);
+            setParsedJob(null);
           }
         }
       )
@@ -120,6 +178,13 @@ export default function DashboardPage() {
     };
   }, [activeJobId]);
 
+  /*
+   * LLM-based parsing, disabled — using form-based input instead.
+   * (Kept for future reference.) This handler invoked the Supabase Edge
+   * Function 'llm-dispatcher' to parse a free-text / voice prompt into a job
+   * card. Re-enable by uncommenting this handler and the LLM input JSX block
+   * below, and removing the form-based input.
+   *
   const handleParsePrompt = async () => {
     if (!prompt.trim()) return;
     setParsing(true);
@@ -142,16 +207,33 @@ export default function DashboardPage() {
       });
     } catch (err) {
       console.error("Parse Error:", err);
-      alert("Failed to parse prompt via AI. Please ensure the backend and edge function are running.");
+      toast.error("Failed to parse prompt via AI. Please ensure the backend and edge function are running.");
     } finally {
       setParsing(false);
     }
+  };
+  */
+
+  // Form-based dispatch: builds the same shape the LLM response used, so the
+  // existing Confirm Job Card + dispatch flow is reused unchanged.
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formRole.trim()) {
+      toast.error("Please enter a role.");
+      return;
+    }
+    setParsedJob({
+      title: formRole.trim(),
+      headcount_required: formHeadcount || 1,
+      max_daily_salary: formSalary || 0,
+      min_experience: formExperience || 0,
+    });
   };
 
   const handleDispatch = async () => {
     if (!parsedJob) return;
     if (!selectedJobSiteId) {
-      alert("Please select a Job Site before dispatching.");
+      toast.error("Please select a Job Site before dispatching.");
       return;
     }
     
@@ -188,9 +270,40 @@ export default function DashboardPage() {
       
     } catch (err: any) {
       console.error("Dispatch Error:", err);
-      alert(err.message || "Failed to dispatch.");
+      toast.error(err.message || "Failed to dispatch.");
     } finally {
       setDispatching(false);
+    }
+  };
+
+  const handleCancelDispatch = async () => {
+    if (!activeJobId) return;
+
+    setCancelling(true);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/jobs/${activeJobId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || "Failed to cancel dispatch");
+      }
+
+      // Reset the dispatch UI back to its idle state.
+      setActiveJobId(null);
+      setMatches([]);
+      setParsedJob(null);
+      toast.success("Dispatch cancelled");
+    } catch (err: any) {
+      console.error("Cancel Error:", err);
+      toast.error(err.message || "Failed to cancel dispatch.");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -201,14 +314,14 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[var(--color-paper)] font-sans selection:bg-[var(--color-saffron)] selection:text-white">
       {/* NAV */}
-      <nav className="bg-[var(--color-charcoal)] text-white border-b-8 border-[var(--color-saffron)] px-6 py-4 flex justify-between items-center relative z-50">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[var(--color-saffron)] text-[var(--color-charcoal)] border-2 border-white flex items-center justify-center font-[var(--font-anton)] text-2xl transform -rotate-3">
+      <nav className="bg-[var(--color-charcoal)] text-white border-b-8 border-[var(--color-saffron)] px-4 sm:px-6 py-4 flex justify-between items-center gap-3 relative z-50">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="w-10 h-10 bg-[var(--color-saffron)] text-[var(--color-charcoal)] border-2 border-white flex items-center justify-center font-[var(--font-anton)] text-2xl transform -rotate-3 shrink-0">
             GL
           </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="font-[var(--font-anton)] text-3xl leading-none uppercase tracking-wide">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 className="font-[var(--font-anton)] text-xl sm:text-2xl md:text-3xl leading-none uppercase tracking-wide">
                 {userType === 'EMPLOYER' ? 'Command Center' : 'Worker Hub'}
               </h1>
               {userType === 'EMPLOYER' && profileData && (
@@ -228,20 +341,20 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-        <button onClick={signOut} className="flex items-center gap-2 font-bold text-sm uppercase hover:text-[var(--color-saffron)] transition-colors">
-          <LogOut size={16} /> Exit
+        <button onClick={signOut} className="flex items-center gap-2 font-bold text-sm uppercase hover:text-[var(--color-saffron)] transition-colors shrink-0">
+          <LogOut size={16} /> Sign Out
         </button>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         
         {/* TABS */}
-        <div className="flex gap-4 mb-8 border-b-4 border-[var(--color-charcoal)]">
+        <div className="flex gap-2 sm:gap-4 mb-8 border-b-4 border-[var(--color-charcoal)] overflow-x-auto">
           {userType === 'EMPLOYER' && (
             <>
               <button 
                 onClick={() => setActiveTab('DISPATCH')}
-                className={`px-6 py-3 font-[var(--font-anton)] text-xl tracking-wide uppercase border-t-4 border-l-4 border-r-4 border-[var(--color-charcoal)] transition-all ${
+                className={`px-4 sm:px-6 py-3 font-[var(--font-anton)] text-base sm:text-xl tracking-wide uppercase border-t-4 border-l-4 border-r-4 border-[var(--color-charcoal)] transition-all shrink-0 whitespace-nowrap ${
                   activeTab === 'DISPATCH' ? 'bg-white text-[var(--color-charcoal)] translate-y-1' : 'bg-gray-200 text-gray-500 hover:bg-gray-100'
                 }`}
               >
@@ -249,7 +362,7 @@ export default function DashboardPage() {
               </button>
               <button 
                 onClick={() => setActiveTab('JOB_SITES')}
-                className={`px-6 py-3 font-[var(--font-anton)] text-xl tracking-wide uppercase border-t-4 border-l-4 border-r-4 border-[var(--color-charcoal)] transition-all ${
+                className={`px-4 sm:px-6 py-3 font-[var(--font-anton)] text-base sm:text-xl tracking-wide uppercase border-t-4 border-l-4 border-r-4 border-[var(--color-charcoal)] transition-all shrink-0 whitespace-nowrap ${
                   activeTab === 'JOB_SITES' ? 'bg-white text-[var(--color-charcoal)] translate-y-1' : 'bg-gray-200 text-gray-500 hover:bg-gray-100'
                 }`}
               >
@@ -259,7 +372,7 @@ export default function DashboardPage() {
           )}
           <button 
             onClick={() => setActiveTab('PROFILE')}
-            className={`px-6 py-3 font-[var(--font-anton)] text-xl tracking-wide uppercase border-t-4 border-l-4 border-r-4 border-[var(--color-charcoal)] transition-all ${
+            className={`px-4 sm:px-6 py-3 font-[var(--font-anton)] text-base sm:text-xl tracking-wide uppercase border-t-4 border-l-4 border-r-4 border-[var(--color-charcoal)] transition-all shrink-0 whitespace-nowrap ${
               activeTab === 'PROFILE' ? 'bg-white text-[var(--color-charcoal)] translate-y-1' : 'bg-gray-200 text-gray-500 hover:bg-gray-100'
             }`}
           >
@@ -287,9 +400,10 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in">
             {/* DISPATCH COLUMN */}
             <div className="lg:col-span-7 space-y-8">
+              <ArrivalNotifier jwtToken={session?.access_token || ''} activeJobId={activeJobId} />
               <div className="bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-6 relative">
                  <div className="absolute -top-4 -left-4 bg-[var(--color-charcoal)] text-white font-bold px-4 py-1 border-2 border-[var(--color-charcoal)] uppercase tracking-widest text-sm">
-                   LLM Dispatch Engine
+                   Post a Job
                  </div>
                  
                  <div className="mt-6">
@@ -307,6 +421,11 @@ export default function DashboardPage() {
                       </select>
                     </div>
                     
+                    {/*
+                      LLM-based parsing, disabled — using form-based input instead. (Kept for future reference.)
+                      The "Voice or Text Input" + "Extract Requirements" block below called handleParsePrompt()
+                      (commented out above), which invoked the Supabase Edge Function 'llm-dispatcher'.
+                      Re-enable by uncommenting handleParsePrompt and this block, and removing the form below.
                     <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Voice or Text Input (Hindi/English)</label>
                     <div className="relative">
                       <textarea 
@@ -318,7 +437,7 @@ export default function DashboardPage() {
                       <button 
                         onClick={() => {
                           if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                            alert("Speech recognition is not supported in this browser. Try Chrome.");
+                            toast.error("Speech recognition is not supported in this browser. Try Chrome.");
                             return;
                           }
                           // @ts-ignore
@@ -353,6 +472,60 @@ export default function DashboardPage() {
                       {parsing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} className="fill-[var(--color-saffron)] text-[var(--color-saffron)]" />}
                       Extract Requirements
                     </button>
+                    */}
+
+                    {/* Form-based dispatch input (replaces the LLM parsing flow) */}
+                    <form onSubmit={handleFormSubmit} className="space-y-4">
+                      <div>
+                        <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Role</label>
+                        <input
+                          type="text"
+                          value={formRole}
+                          onChange={(e) => setFormRole(e.target.value)}
+                          className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          placeholder="e.g. Fiber Laser Operator"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Headcount</label>
+                          <input
+                            type="number"
+                            min={1}
+                            value={formHeadcount}
+                            onChange={(e) => setFormHeadcount(parseInt(e.target.value) || 0)}
+                            className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Salary / Day (Rs)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={formSalary}
+                            onChange={(e) => setFormSalary(parseInt(e.target.value) || 0)}
+                            className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold uppercase text-xs tracking-widest mb-2 text-gray-500">Min Experience (Yrs)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={formExperience}
+                            onChange={(e) => setFormExperience(parseInt(e.target.value) || 0)}
+                            className="w-full border-2 border-[var(--color-charcoal)] p-3 font-bold outline-none focus:bg-[var(--color-paper)]"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!formRole.trim()}
+                        className="mt-2 bg-[var(--color-charcoal)] text-white font-bold uppercase tracking-widest px-6 py-3 border-2 border-[var(--color-charcoal)] hard-shadow-hover hover:bg-black transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <Zap size={18} className="fill-[var(--color-saffron)] text-[var(--color-saffron)]" /> Review Job Card
+                      </button>
+                    </form>
                  </div>
               </div>
 
@@ -399,8 +572,16 @@ export default function DashboardPage() {
                   <div className="w-16 h-16 bg-white border-4 border-[var(--color-charcoal)] flex items-center justify-center mx-auto rounded-full hard-shadow animate-pulse">
                     <Zap size={32} className="fill-[var(--color-ember)] text-[var(--color-ember)]" />
                   </div>
-                  <h3 className="font-[var(--font-anton)] text-4xl uppercase">Dispatch Active</h3>
+                  <h3 className="font-[var(--font-anton)] text-3xl sm:text-4xl uppercase">Dispatch Active</h3>
                   <p className="font-bold text-lg">Pinging workers within 10km radius...</p>
+                  <button
+                    onClick={handleCancelDispatch}
+                    disabled={cancelling}
+                    className="w-full bg-[var(--color-charcoal)] text-white font-[var(--font-anton)] text-lg sm:text-xl uppercase tracking-wider py-3 border-4 border-[var(--color-charcoal)] hard-shadow-hover hover:bg-red-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {cancelling ? <Loader2 className="animate-spin" size={20} /> : <XCircle size={20} />}
+                    {cancelling ? 'Cancelling...' : 'Stop / Cancel Dispatch'}
+                  </button>
                 </div>
               )}
             </div>
@@ -451,42 +632,31 @@ export default function DashboardPage() {
         
         {/* WORKER DASHBOARD (Overrides tabs if active) */}
         {userType === 'WORKER' && activeTab === 'PROFILE' && (
-           <WorkerDashboard profileData={profileData} setProfileData={setProfileData} />
+           <WorkerDashboard profileData={profileData} setProfileData={setProfileData} refreshSignal={workerJobsRefreshKey} />
         )}
-        
+
       </main>
 
       {userType === 'WORKER' && profileData?.id && (
         <>
-          <JobOfferModal 
-            workerId={profileData.id} 
+          <JobOfferModal
+            workerId={profileData.id}
             jwtToken={session?.access_token || ''}
             onJobAccepted={() => {
-              // Trigger navigation flow
-              setShowNavigation(true);
+              // The real active-job card (with live arrive/complete/OTP flow)
+              // lives in WorkerDashboard - just tell it to refetch.
+              setWorkerJobsRefreshKey((k) => k + 1);
             }}
           />
-          {showNavigation && (
-            <JobNavigationSheet 
-              jobTitle="Assigned Role"
-              employerName="Assigned Employer"
-              employerPhone="+910000000000"
-              onCancel={() => setShowNavigation(false)}
-              onArrived={() => {
-                alert("Arrival Code Sent! Waiting for Employer verification...");
-                setShowNavigation(false);
-              }}
-            />
-          )}
         </>
       )}
 
-      <SubscriptionModal 
+      <SubscriptionModal
         isOpen={showSubscriptionModal} 
         onClose={() => setShowSubscriptionModal(false)}
         onSuccess={() => {
           setShowSubscriptionModal(false);
-          alert("Payment Successful! You can now dispatch workers.");
+          toast.success("Payment Successful! You can now dispatch workers.");
           // Ideally refresh profileData here to show new subscription_valid_until
         }}
         jwtToken={session?.access_token || ''}

@@ -21,17 +21,24 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [accountType, setAccountType] = useState<AccountType>(null);
   const [formData, setFormData] = useState<any>({});
+  const [initialSide, setInitialSide] = useState<'WORKER' | 'EMPLOYER' | null>(null);
 
   useEffect(() => {
     // Inject email from login if it exists
     const savedEmail = localStorage.getItem('onboardingEmail');
     if (savedEmail && !formData.email) {
-      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setFormData((prev: any) => ({ ...prev, email: savedEmail }));
+    }
+    // Inject side (worker/employer) chosen on landing page, so the redundant
+    // "Choose Account" side-selection step can be skipped
+    const savedSide = localStorage.getItem('onboardingSide');
+    if (savedSide === 'WORKER' || savedSide === 'EMPLOYER') {
+      setInitialSide(savedSide);
     }
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    // if (loading) return;
     
     if (!session) {
       router.push('/login');
@@ -41,34 +48,52 @@ export default function OnboardingPage() {
     const checkExisting = async () => {
       const phone = user?.phone;
       if (!phone) return;
-      
+
       // The database might store the phone with a '+' prefix, while Supabase Auth might return it without.
       // We check for both variations to prevent forcing users to re-register.
       const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
       const rawPhone = phone.replace('+', '');
-      
-      const { data: empData } = await supabase
-        .from('employers')
-        .select('*')
-        .in('phone', [formattedPhone, rawPhone])
-        .maybeSingle();
-        
-      if (empData) {
-        router.push('/dashboard');
-        return;
+
+      const checkEmployer = async () => {
+        const { data } = await supabase
+          .from('employers')
+          .select('*')
+          .in('phone', [formattedPhone, rawPhone])
+          .maybeSingle();
+        return !!data;
+      };
+
+      const checkWorker = async () => {
+        const { data } = await supabase
+          .from('workers')
+          .select('*')
+          .in('phone', [formattedPhone, rawPhone])
+          .maybeSingle();
+        return !!data;
+      };
+
+      // Same phone number can end up registering both an employer and a
+      // worker profile. If the user chose "I want work" at login, only skip
+      // onboarding when a worker profile already exists for this phone -
+      // an existing employer profile shouldn't block worker registration.
+      const savedSide = localStorage.getItem('onboardingSide');
+
+      if (savedSide === 'WORKER') {
+        if (await checkWorker()) {
+          router.push('/dashboard');
+          return;
+        }
+      } else {
+        if (await checkEmployer()) {
+          router.push('/dashboard');
+          return;
+        }
+        if (await checkWorker()) {
+          router.push('/dashboard');
+          return;
+        }
       }
-      
-      const { data: workerData } = await supabase
-        .from('workers')
-        .select('*')
-        .in('phone', [formattedPhone, rawPhone])
-        .maybeSingle();
-        
-      if (workerData) {
-        router.push('/dashboard');
-        return;
-      }
-      
+
       setChecking(false);
     };
     
@@ -82,21 +107,21 @@ export default function OnboardingPage() {
     setFormData((prev: any) => ({ ...prev, ...data }));
   };
 
-  if (checking) {
+  if (false) {
     return <div className="min-h-screen bg-[var(--color-paper)] flex items-center justify-center font-[var(--font-anton)] text-3xl">LOADING...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-paper)] font-sans flex items-center justify-center p-6 selection:bg-[var(--color-saffron)] selection:text-white">
-      <div className="w-full max-w-2xl bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-8 relative">
+    <div className="min-h-screen bg-[var(--color-paper)] font-sans flex items-center justify-center p-4 sm:p-6 selection:bg-[var(--color-saffron)] selection:text-white">
+      <div className="w-full max-w-2xl bg-white border-4 border-[var(--color-charcoal)] hard-shadow p-5 sm:p-8 relative">
         
         {/* Progress Indicator */}
         <div className="mb-8 border-b-2 border-[var(--color-charcoal)] pb-4">
-          <div className="flex justify-between items-end">
-            <h1 className="font-[var(--font-anton)] text-4xl uppercase tracking-wide">
+          <div className="flex justify-between items-end gap-3">
+            <h1 className="font-[var(--font-anton)] text-3xl sm:text-4xl uppercase tracking-wide">
               {currentStep === 1 ? 'Choose Account' : 'Profile Setup'}
             </h1>
-            <span className="font-bold text-[var(--color-charcoal)]">Step {currentStep}</span>
+            <span className="font-bold text-[var(--color-charcoal)] shrink-0">Step {currentStep}</span>
           </div>
         </div>
 
@@ -104,6 +129,7 @@ export default function OnboardingPage() {
         {currentStep === 1 && (
           <AccountTypeSelector 
             selectedType={accountType} 
+            initialSide={initialSide}
             onSelect={(type) => {
               setAccountType(type);
               nextStep();
