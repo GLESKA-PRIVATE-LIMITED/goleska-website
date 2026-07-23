@@ -16,7 +16,6 @@ import {
   Mail,
   Hash,
   AlertCircle,
-  Info,
   Zap,
 } from 'lucide-react';
 
@@ -123,6 +122,11 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
   const [panResult, setPanResult] = useState<{ valid: boolean; company_name: string; cin_number: string } | null>(null);
   const [panError, setPanError] = useState('');
 
+  const [loadingBank, setLoadingBank] = useState(false);
+  const [bankVerified, setBankVerified] = useState(false);
+  const [bankResult, setBankResult] = useState<{ valid: boolean; account_name: string; bank_name?: string } | null>(null);
+  const [bankError, setBankError] = useState('');
+
   const [registering, setRegistering] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [stepError, setStepError] = useState('');
@@ -163,6 +167,46 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
     }
   };
 
+  const handleVerifyBank = async () => {
+    setBankError('');
+    if (!formData.bank_account_number?.trim() || !formData.bank_ifsc?.trim()) {
+      setBankError('Please enter your account number and IFSC code.');
+      return;
+    }
+
+    setLoadingBank(true);
+    try {
+      // Reuses the existing POST /api/v1/kyc/penny-drop endpoint (real Cashfree bank verification).
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/kyc/penny-drop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_number: formData.bank_account_number, ifsc: formData.bank_ifsc }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail || 'Bank verification failed. Please check the details and try again.');
+      }
+      const data = await res.json();
+      if (!data.valid) {
+        throw new Error('We could not verify this bank account. Please check the account number and IFSC.');
+      }
+
+      setBankResult({ valid: data.valid, account_name: data.account_name, bank_name: data.bank_name });
+      setBankVerified(true);
+      updateFormData({
+        bank_verified: true,
+        bank_account_holder_name: formData.bank_account_holder_name || data.account_name,
+      });
+    } catch (err: any) {
+      setBankVerified(false);
+      setBankResult(null);
+      updateFormData({ bank_verified: false });
+      setBankError(err.message || 'Bank verification failed. Please try again.');
+    } finally {
+      setLoadingBank(false);
+    }
+  };
+
   const goNext = () => {
     setStepError('');
     if (step === 1) {
@@ -175,11 +219,9 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
       setStepError('Please verify your PAN before continuing.');
       return;
     }
-    if (step === 3) {
-      if (!formData.bank_account_number?.trim() || !formData.bank_ifsc?.trim()) {
-        setStepError('Please enter your account number and IFSC code.');
-        return;
-      }
+    if (step === 3 && !bankVerified) {
+      setStepError('Please verify your bank account before continuing.');
+      return;
     }
     setStep((s) => Math.min(totalSteps, s + 1));
   };
@@ -493,14 +535,13 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
               </div>
             )}
 
-            {/* STEP 3: Bank Account Setup - collected now, verified later (no fake verification) */}
+            {/* STEP 3: Bank Account Setup - real penny-drop verification */}
             {step === 3 && (
               <div className="space-y-5">
-                <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
-                  <Info className="mt-0.5 shrink-0 text-slate-500" size={18} />
-                  <p className="text-sm text-slate-600">
-                    Add the bank account where you&apos;d like to receive payouts.{' '}
-                    <span className="font-semibold text-slate-700">Your account will be verified later</span> during payout setup.
+                <div className="flex items-start gap-3 rounded-xl bg-indigo-50 p-4">
+                  <ShieldCheck className="mt-0.5 shrink-0 text-indigo-600" size={20} />
+                  <p className="text-sm text-indigo-900/80">
+                    Your payout account is verified with a secure penny-drop check against the bank registry.
                   </p>
                 </div>
 
@@ -510,9 +551,10 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
                     <Landmark className={iconCls} size={18} />
                     <input
                       type="text"
-                      value={formData.bank_account_name || ''}
-                      onChange={(e) => updateFormData({ bank_account_name: e.target.value })}
-                      className={inputCls + ' pl-11'}
+                      value={formData.bank_account_holder_name || ''}
+                      onChange={(e) => updateFormData({ bank_account_holder_name: e.target.value })}
+                      disabled={bankVerified}
+                      className={inputCls + ' pl-11 disabled:opacity-60'}
                       placeholder="Registered account name"
                     />
                   </div>
@@ -526,8 +568,13 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
                       type="text"
                       inputMode="numeric"
                       value={formData.bank_account_number || ''}
-                      onChange={(e) => updateFormData({ bank_account_number: e.target.value.replace(/\D/g, '') })}
-                      className={inputCls + ' pl-11'}
+                      onChange={(e) => {
+                        updateFormData({ bank_account_number: e.target.value.replace(/\D/g, ''), bank_verified: false });
+                        setBankVerified(false);
+                        setBankResult(null);
+                      }}
+                      disabled={bankVerified}
+                      className={inputCls + ' pl-11 disabled:opacity-60'}
                       placeholder="1234567890"
                     />
                   </div>
@@ -540,13 +587,73 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
                     <input
                       type="text"
                       value={formData.bank_ifsc || ''}
-                      onChange={(e) => updateFormData({ bank_ifsc: e.target.value.toUpperCase() })}
+                      onChange={(e) => {
+                        updateFormData({ bank_ifsc: e.target.value.toUpperCase(), bank_verified: false });
+                        setBankVerified(false);
+                        setBankResult(null);
+                      }}
+                      disabled={bankVerified}
                       maxLength={11}
-                      className={inputCls + ' pl-11 uppercase'}
+                      className={inputCls + ' pl-11 uppercase disabled:opacity-60'}
                       placeholder="HDFC0001234"
                     />
                   </div>
                 </div>
+
+                {bankError && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" /> {bankError}
+                  </div>
+                )}
+
+                {!bankVerified ? (
+                  <button
+                    type="button"
+                    onClick={handleVerifyBank}
+                    disabled={loadingBank || !(formData.bank_account_number || '').trim() || !(formData.bank_ifsc || '').trim()}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {loadingBank ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} /> Verifying...
+                      </>
+                    ) : (
+                      <>
+                        Verify Account <ShieldCheck size={16} />
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  // Real post-verification confirmation from the penny-drop response.
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+                    <div className="mb-4 flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white">
+                        <Check size={18} />
+                      </div>
+                      <p className="text-sm font-bold text-emerald-800">Bank Account Verified</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <p className={miniLabel}>Account Holder</p>
+                        <p className="text-sm font-semibold text-slate-900">{bankResult?.account_name || formData.bank_account_holder_name || '-'}</p>
+                      </div>
+                      <div>
+                        <p className={miniLabel}>Account Number</p>
+                        <p className="font-mono text-sm font-semibold text-slate-900">{maskedAccount}</p>
+                      </div>
+                      {bankResult?.bank_name ? (
+                        <div>
+                          <p className={miniLabel}>Bank</p>
+                          <p className="text-sm font-semibold text-slate-900">{bankResult.bank_name}</p>
+                        </div>
+                      ) : null}
+                      <div>
+                        <p className={miniLabel}>Status</p>
+                        <p className="text-sm font-semibold text-emerald-700">{bankResult?.valid ? 'Valid' : 'Verified'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -586,10 +693,21 @@ export default function RegisteredBusinessWizard({ formData, updateFormData, onB
                 </ReviewSection>
 
                 <ReviewSection title="Bank Account" onEdit={() => setStep(3)}>
-                  <ReviewRow label="Account Holder" value={formData.bank_account_name} />
+                  <ReviewRow label="Account Holder" value={formData.bank_account_holder_name} />
                   <ReviewRow label="Account Number" value={maskedAccount} />
                   <ReviewRow label="IFSC Code" value={formData.bank_ifsc} />
-                  <ReviewRow label="Verification" value="Pending (will be verified later)" />
+                  <ReviewRow
+                    label="Verification"
+                    value={
+                      bankVerified ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-700">
+                          <Check size={14} /> Verified
+                        </span>
+                      ) : (
+                        'Not verified'
+                      )
+                    }
+                  />
                 </ReviewSection>
               </div>
             )}
