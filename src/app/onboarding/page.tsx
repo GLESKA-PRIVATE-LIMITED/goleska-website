@@ -146,6 +146,20 @@ export default function OnboardingPage() {
     return <div className="flex min-h-screen items-center justify-center bg-[#eef1fb] text-2xl font-extrabold text-slate-900">Loading...</div>;
   }
 
+  // Step 1 (account type) has its own full-screen two-column layout.
+  if (currentStep === 1) {
+    return (
+      <AccountTypeSelector
+        selectedType={accountType}
+        initialSide={initialSide}
+        onSelect={(type) => {
+          setAccountType(type);
+          nextStep();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
       <OnboardingSidePanel />
@@ -178,18 +192,7 @@ export default function OnboardingPage() {
           {/* Step indicator - shown during the multi-step form / KYC stages */}
           {currentStep >= 2 && <StepIndicator current={currentStep} />}
 
-          {/* Wizard Steps */}
-          {currentStep === 1 && (
-            <AccountTypeSelector 
-              selectedType={accountType} 
-              initialSide={initialSide}
-              onSelect={(type) => {
-                setAccountType(type);
-                nextStep();
-              }} 
-            />
-          )}
-
+          {/* Wizard Steps (the account-type step 1 renders in its own full-screen layout above) */}
           {currentStep === 2 && (accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') && (
             <BusinessDetailsForm 
               formData={formData} 
