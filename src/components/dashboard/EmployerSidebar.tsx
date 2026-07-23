@@ -1,10 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Menu, Plus, Search, Settings, ShieldCheck, LogOut, MapPin, Zap, MessageSquare } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Menu,
+  Plus,
+  Search,
+  Settings,
+  ShieldCheck,
+  LogOut,
+  MapPin,
+  Zap,
+  MessageSquare,
+  MoreVertical,
+} from 'lucide-react';
 
 interface Props {
   jobSites: any[];
+  companyName: string;
+  expanded: boolean;
+  onToggle: () => void;
   onNewChat: () => void;
   onSelectSite: (id: string) => void;
   onOpenProfile: () => void;
@@ -13,27 +27,72 @@ interface Props {
 }
 
 /**
- * Employer dashboard left navigation shell ("Business Mall" chat-app style).
- * Two states, toggled by the hamburger:
- *  - collapsed: icon-only narrow column (menu, new chat, search) + settings/exit pinned bottom.
- *  - expanded: "New chat" / "Search chats" buttons + a "Recents" list (the employer's job sites).
- * Defaults expanded on desktop (>= lg) and collapsed on smaller screens.
+ * Employer dashboard left navigation (ChatGPT / "Business Mall" chat-app style),
+ * used for REGISTERED_BUSINESS employers. Expand/collapse is controlled by the
+ * parent so the dispatch hero can react (e.g. show the "AI - Powered Hiring"
+ * badge only when collapsed). The account control lives at the bottom-left and
+ * opens a dropdown of account actions (Settings / Security / Sign out).
  */
-export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onOpenProfile, onOpenSecurity, onSignOut }: Props) {
-  const [expanded, setExpanded] = useState(false);
+export default function EmployerSidebar({
+  jobSites,
+  companyName,
+  expanded,
+  onToggle,
+  onNewChat,
+  onSelectSite,
+  onOpenProfile,
+  onOpenSecurity,
+  onSignOut,
+}: Props) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Default collapsed on mobile, expanded on desktop (avoids hydration mismatch
-    // by starting false on both server + first client render, then expanding).
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) setExpanded(true);
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
+
+  const initials =
+    String(companyName || 'GL')
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'GL';
+
+  const accountMenu = (
+    <>
+      <button
+        onClick={() => { setMenuOpen(false); onOpenProfile(); }}
+        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+      >
+        <Settings size={16} /> Settings
+      </button>
+      <button
+        onClick={() => { setMenuOpen(false); onOpenSecurity(); }}
+        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+      >
+        <ShieldCheck size={16} /> Security
+      </button>
+      <button
+        onClick={() => { setMenuOpen(false); onSignOut(); }}
+        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+      >
+        <LogOut size={16} /> Sign out
+      </button>
+    </>
+  );
 
   return (
     <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white transition-all duration-200 ${expanded ? 'w-64' : 'w-16'}`}>
       {/* Top: hamburger + brand */}
       <div className="flex items-center gap-2 p-3">
         <button
-          onClick={() => setExpanded((v) => !v)}
+          onClick={onToggle}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
           aria-label="Toggle sidebar"
         >
@@ -76,7 +135,7 @@ export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onO
               <MessageSquare size={20} />
             </button>
             <button
-              onClick={() => setExpanded(true)}
+              onClick={onToggle}
               className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
               title="Search"
             >
@@ -111,55 +170,62 @@ export default function EmployerSidebar({ jobSites, onNewChat, onSelectSite, onO
         <div className="flex-1" />
       )}
 
-      {/* Bottom: settings + exit pinned */}
-      <div className="mt-auto flex flex-col gap-1 border-t border-slate-200 p-3">
-        {expanded ? (
-          <>
+      {/* Bottom: settings gear + account control (moved here, ChatGPT-style) */}
+      {expanded ? (
+        <div className="mt-auto border-t border-slate-200 p-2">
+          <button
+            onClick={onOpenProfile}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+          >
+            <Settings size={18} /> Settings
+          </button>
+
+          <div className="relative mt-1" ref={menuRef}>
+            {menuOpen && (
+              <div className="absolute bottom-[calc(100%+0.5rem)] left-0 right-0 z-50 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
+                {accountMenu}
+              </div>
+            )}
             <button
-              onClick={onOpenProfile}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition hover:bg-slate-100"
             >
-              <Settings size={18} /> Settings
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-800">{companyName || 'My Company'}</p>
+                <p className="truncate text-xs text-slate-400">Business Owner</p>
+              </div>
+              <MoreVertical size={16} className="shrink-0 text-slate-400" />
             </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-auto flex flex-col items-center gap-1 border-t border-slate-200 p-2">
+          <button
+            onClick={onOpenProfile}
+            title="Settings"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
+          >
+            <Settings size={20} />
+          </button>
+          <div className="relative" ref={menuRef}>
+            {menuOpen && (
+              <div className="absolute bottom-0 left-[calc(100%+0.5rem)] z-50 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
+                {accountMenu}
+              </div>
+            )}
             <button
-              onClick={onOpenSecurity}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+              onClick={() => setMenuOpen((v) => !v)}
+              title="Account"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white"
             >
-              <ShieldCheck size={18} /> Security
+              {initials}
             </button>
-            <button
-              onClick={onSignOut}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-            >
-              <LogOut size={18} /> Exit
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={onOpenProfile}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
-              title="Settings"
-            >
-              <Settings size={20} />
-            </button>
-            <button
-              onClick={onOpenSecurity}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
-              title="Security"
-            >
-              <ShieldCheck size={20} />
-            </button>
-            <button
-              onClick={onSignOut}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-              title="Exit"
-            >
-              <LogOut size={20} />
-            </button>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

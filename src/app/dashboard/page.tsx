@@ -19,6 +19,8 @@ import ReportsView from '@/components/dashboard/ReportsView';
 import CompanyProfileView from '@/components/dashboard/CompanyProfileView';
 import DirectorProfileView from '@/components/dashboard/DirectorProfileView';
 import LocationSelectionView from '@/components/dashboard/LocationSelectionView';
+import EmployerSidebar from '@/components/dashboard/EmployerSidebar';
+import SelectLocationModal from '@/components/dashboard/SelectLocationModal';
 import { toast } from 'sonner';
 
 interface ParsedJob {
@@ -57,7 +59,14 @@ export default function DashboardPage() {
   const [jobSites, setJobSites] = useState<any[]>([]);
   const [selectedJobSiteId, setSelectedJobSiteId] = useState<string>('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [workerJobsRefreshKey, setWorkerJobsRefreshKey] = useState(0);
+
+  useEffect(() => {
+    // Employer sidebar defaults expanded on desktop, collapsed on smaller screens.
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) setSidebarExpanded(true);
+  }, []);
 
   useEffect(() => {
     // [Onboarding Timer] Start time is stamped at OTP verification (login page).
@@ -91,6 +100,8 @@ export default function DashboardPage() {
       const data = await empRes.json();
       setProfileData(data);
       setUserType('EMPLOYER');
+      // REGISTERED_BUSINESS gets the chat-style dispatch experience as its landing.
+      if (data.account_type === 'REGISTERED_BUSINESS') setActiveTab('DISPATCH');
 
       // Fetch Job Sites
       const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
@@ -370,17 +381,33 @@ export default function DashboardPage() {
       ? '1 Free Dispatch'
       : 'Subscription Required';
 
+  const isRegBusiness = profileData?.account_type === 'REGISTERED_BUSINESS';
+
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
-      <AdminSidebar
-        active={activeTab}
-        companyName={displayName}
-        onNavigate={(tab) => {
-          if (tab === 'DISPATCH') { setParsedJob(null); setFormRole(''); }
-          setActiveTab(tab as Tab);
-        }}
-        onSignOut={signOut}
-      />
+      {isRegBusiness ? (
+        <EmployerSidebar
+          jobSites={jobSites}
+          companyName={displayName}
+          expanded={sidebarExpanded}
+          onToggle={() => setSidebarExpanded((v) => !v)}
+          onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
+          onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
+          onOpenProfile={() => setActiveTab('PROFILE')}
+          onOpenSecurity={() => setActiveTab('SECURITY')}
+          onSignOut={signOut}
+        />
+      ) : (
+        <AdminSidebar
+          active={activeTab}
+          companyName={displayName}
+          onNavigate={(tab) => {
+            if (tab === 'DISPATCH') { setParsedJob(null); setFormRole(''); }
+            setActiveTab(tab as Tab);
+          }}
+          onSignOut={signOut}
+        />
+      )}
 
       <main className="min-w-0 flex-1">
         {/* Null-rendering listener for real-time worker arrivals */}
@@ -457,9 +484,11 @@ export default function DashboardPage() {
           <div className="mx-auto max-w-3xl px-4 py-10 sm:px-8">
             {/* Hero */}
             <div className="text-center">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
-                <Sparkles size={13} /> AI - Powered Hiring
-              </div>
+              {(!isRegBusiness || !sidebarExpanded) && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+                  <Sparkles size={13} /> AI - Powered Hiring
+                </div>
+              )}
               <h1 className="mt-4 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl">
                 Hey {displayName}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Who are you hiring today??</span>
               </h1>
@@ -496,7 +525,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setActiveTab('LOCATION')}
+                  onClick={() => setShowLocationModal(true)}
                   className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-left text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15"><MapPin size={20} /></div>
@@ -694,6 +723,11 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      <SelectLocationModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+      />
 
       <SubscriptionModal
         isOpen={showSubscriptionModal}
