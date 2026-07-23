@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import AccountTypeSelector from '@/components/onboarding/AccountTypeSelector';
+import RegisteredBusinessWizard from '@/components/onboarding/RegisteredBusinessWizard';
 import BusinessDetailsForm from '@/components/onboarding/BusinessDetailsForm';
 import KYCVerificationForm from '@/components/onboarding/KYCVerificationForm';
 import UnregisteredBusinessForm from '@/components/onboarding/UnregisteredBusinessForm';
@@ -160,6 +161,22 @@ export default function OnboardingPage() {
     );
   }
 
+  // REGISTERED_BUSINESS gets a dedicated 4-step left-rail wizard (its own layout).
+  // All other account types fall through to the shared step flow below, unchanged.
+  if (accountType === 'REGISTERED_BUSINESS') {
+    return (
+      <RegisteredBusinessWizard
+        formData={formData}
+        updateFormData={updateFormData}
+        onBackToStart={() => {
+          setAccountType(null);
+          setCurrentStep(1);
+        }}
+        onComplete={() => router.push('/dashboard')}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
       <OnboardingSidePanel />
@@ -193,7 +210,9 @@ export default function OnboardingPage() {
           {currentStep >= 2 && <StepIndicator current={currentStep} />}
 
           {/* Wizard Steps (the account-type step 1 renders in its own full-screen layout above) */}
-          {currentStep === 2 && (accountType === 'REGISTERED_BUSINESS' || accountType === 'REGISTERED_INDUSTRY') && (
+          {/* REGISTERED_BUSINESS is handled by RegisteredBusinessWizard above; this shared
+              BusinessDetailsForm now serves REGISTERED_INDUSTRY only. */}
+          {currentStep === 2 && accountType === 'REGISTERED_INDUSTRY' && (
             <BusinessDetailsForm 
               formData={formData} 
               updateFormData={updateFormData} 
