@@ -468,6 +468,13 @@ export default function DashboardPage() {
     ? profileData.company_name
     : (profileData?.proprietor_name || profileData?.email || 'there');
 
+  // The hero greeting uses the person's name (asked at signup), not the company.
+  const personName = profileData?.contact_name
+    || profileData?.proprietor_name
+    || (Array.isArray(profileData?.director_data) ? profileData?.director_data?.[0]?.name : null)
+    || '';
+  const greetingName = personName ? personName.trim().split(/\s+/)[0] : (displayName !== 'there' ? displayName : 'there');
+
   const subStatus = profileData?.subscription_valid_until && new Date(profileData.subscription_valid_until) > new Date()
     ? `Subscribed until ${new Date(profileData.subscription_valid_until).toLocaleDateString()}`
     : !profileData?.has_availed_free_dispatch
@@ -611,7 +618,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <h1 className="mt-4 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl">
-                  Hey {displayName}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">who do you need on-site today?</span>
+                  Hey {greetingName}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">who do you need on-site today?</span>
                 </h1>
                 <p className="mt-2 text-sm text-slate-500 sm:text-base">Ask GO LESKA to find talent, vendors, or manage your hiring</p>
               </div>
