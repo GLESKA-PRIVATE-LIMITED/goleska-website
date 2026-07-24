@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar } from 'lucide-react';
+import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar, Briefcase } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -27,6 +27,17 @@ interface CompletedJob {
   employer_name: string;
   salary: number;
   completed_at: string | null;
+}
+
+interface AvailableJob {
+  job_id: string;
+  title: string;
+  salary: number;
+  headcount: number;
+  min_experience: number | null;
+  employer_name: string;
+  distance_m: number | null;
+  distance_km: number | null;
 }
 
 interface WorkerDashboardProps {
@@ -58,12 +69,37 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
   const [completing, setCompleting] = useState(false);
   const [dismissing, setDismissing] = useState(false);
   const [showNavigation, setShowNavigation] = useState(false);
+  const [availableJobs, setAvailableJobs] = useState<AvailableJob[]>([]);
+  const [loadingAvailable, setLoadingAvailable] = useState(true);
 
   useEffect(() => {
     fetchWorkerJobs();
+    fetchAvailableJobs();
     // refreshSignal bumps when a job offer is accepted elsewhere on the
     // dashboard, so the freshly accepted assignment shows up here.
   }, [refreshSignal]);
+
+  // Poll nearby open jobs on a light interval, mirroring the active-job refresh.
+  useEffect(() => {
+    const interval = setInterval(fetchAvailableJobs, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchAvailableJobs = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me/available-jobs`, {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableJobs(data.jobs || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingAvailable(false);
+    }
+  };
 
   const fetchWorkerJobs = async () => {
     try {
@@ -320,27 +356,62 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
         </div>
       )}
 
-      {/* Available Jobs - GO LESKA uses a direct-dispatch model, so there is no
-          browsable list of open jobs yet. This section honestly explains that
-          jobs are pushed to the worker rather than browsed. */}
+      {/* Available Jobs - real list of open (SEARCHING) jobs near the worker,
+          from GET /workers/me/available-jobs. Honest empty state when none. */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Available Jobs</h3>
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600">Auto-dispatch</span>
+          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600">Near you</span>
         </div>
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
-            <Radar size={24} />
+
+        {loadingAvailable ? (
+          <div className="space-y-3">
+            <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
+            <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
           </div>
-          <p className="text-sm font-bold text-slate-700">
-            {isAvailable ? "You're live - matching you to nearby jobs" : 'Go online to start receiving jobs'}
-          </p>
-          <p className="max-w-sm text-xs text-slate-400">
-            GO LESKA dispatches jobs to you directly based on your location, so there&apos;s nothing to browse. When an
-            employer nearby needs someone, you&apos;ll get an instant job offer to accept. Open-job browsing is coming
-            soon.
-          </p>
-        </div>
+        ) : availableJobs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+              <Radar size={24} />
+            </div>
+            <p className="text-sm font-bold text-slate-700">No open jobs near you right now</p>
+            <p className="max-w-sm text-xs text-slate-400">
+              We&apos;ll match you the moment an employer nearby posts a job. Make sure your location is pinned and
+              you&apos;re online.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {availableJobs.map((job) => (
+              <div
+                key={job.job_id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+                    <Briefcase size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-slate-900">{job.title}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {job.employer_name}
+                      {job.distance_km != null ? ` • ${job.distance_km} km away` : ''}
+                      {` • ${job.headcount} needed`}
+                    </p>
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-sm font-extrabold text-slate-900">₹{job.salary}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">/ day</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="mt-3 text-center text-[11px] text-slate-400">
+          Jobs are dispatched to you automatically - you&apos;ll get an instant offer to accept as they arrive.
+        </p>
       </div>
 
       {/* Recent Jobs History */}

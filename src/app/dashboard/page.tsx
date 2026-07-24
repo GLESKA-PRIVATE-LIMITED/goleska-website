@@ -739,14 +739,14 @@ export default function DashboardPage() {
         {/* ---- COMPANY PROFILE ---- (real data) */}
         {activeTab === 'COMPANY' && (
           <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
-            <CompanyProfileView profileData={profileData} />
+            <CompanyProfileView profileData={profileData} onUpdated={setProfileData} />
           </div>
         )}
 
         {/* ---- DIRECTOR PROFILE ---- (real data) */}
         {activeTab === 'DIRECTOR' && (
           <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
-            <DirectorProfileView profileData={profileData} />
+            <DirectorProfileView profileData={profileData} onUpdated={setProfileData} />
           </div>
         )}
 
