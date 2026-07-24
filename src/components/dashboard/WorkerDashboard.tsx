@@ -73,6 +73,8 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
   const [loadingAvailable, setLoadingAvailable] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showWorkOptions, setShowWorkOptions] = useState(false);
+  const [showAvailable, setShowAvailable] = useState(false);
+  const [showDone, setShowDone] = useState(false);
 
   useEffect(() => {
     fetchWorkerJobs();
@@ -411,13 +413,24 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
         </div>
       )}
 
-      {/* Available Jobs - real list of open (SEARCHING) jobs near the worker,
-          from GET /workers/me/available-jobs. Honest empty state when none. */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Available Jobs</h3>
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600">Near you</span>
-        </div>
+      {/* Available Jobs - collapsible; closed by default, opens on click. */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <button
+          type="button"
+          onClick={() => setShowAvailable((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 p-5 text-left transition hover:bg-slate-50 sm:p-6"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Available Jobs</h3>
+            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+              {loadingAvailable ? '...' : `${availableJobs.length} near you`}
+            </span>
+          </div>
+          <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform ${showAvailable ? 'rotate-180' : ''}`} />
+        </button>
+
+        {showAvailable && (
+          <div className="px-5 pb-5 sm:px-6 sm:pb-6">
 
         {loadingAvailable ? (
           <div className="space-y-3">
@@ -472,35 +485,53 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
         <p className="mt-3 text-center text-[11px] text-slate-400">
           Jobs are dispatched to you automatically - you&apos;ll get an instant offer to accept as they arrive.
         </p>
+          </div>
+        )}
       </div>
 
-      {/* Recent Jobs History */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Jobs Done</h3>
-        {completedJobs.length === 0 ? (
-          <p className="text-sm text-slate-400">No completed jobs yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {completedJobs.map((job) => (
-              <div
-                key={job.match_id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-                    <CheckCircle size={18} />
+      {/* Recent Jobs History - collapsible; closed by default, opens on click. */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <button
+          type="button"
+          onClick={() => setShowDone((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 p-5 text-left transition hover:bg-slate-50 sm:p-6"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Jobs Done</h3>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              {completedJobs.length}
+            </span>
+          </div>
+          <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform ${showDone ? 'rotate-180' : ''}`} />
+        </button>
+        {showDone && (
+          <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+            {completedJobs.length === 0 ? (
+              <p className="text-sm text-slate-400">No completed jobs yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {completedJobs.map((job) => (
+                  <div
+                    key={job.match_id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                        <CheckCircle size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900">{job.title}</p>
+                        <p className="text-xs text-slate-500">
+                          {job.employer_name}
+                          {job.completed_at ? ` • ${new Date(job.completed_at).toLocaleDateString()}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-lg font-extrabold text-slate-900">₹{job.salary}</span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900">{job.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {job.employer_name}
-                      {job.completed_at ? ` • ${new Date(job.completed_at).toLocaleDateString()}` : ''}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-lg font-extrabold text-slate-900">₹{job.salary}</span>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
