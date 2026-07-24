@@ -40,6 +40,7 @@ const employerOptions: Option[] = [
   { id: 'REGISTERED_INDUSTRY', title: 'Registered Industry', desc: 'Factories and manufacturing units', icon: Factory, color: 'bg-teal-600' },
   { id: 'REGISTERED_BUSINESS', title: 'Registered Business', desc: 'Pvt Ltd, LLP, Public Ltd with GST/CIN', icon: Building2, color: 'bg-indigo-600' },
   { id: 'UNREGISTERED_BUSINESS', title: 'Unregistered Business', desc: 'Proprietors & informal businesses', icon: Store, color: 'bg-purple-600' },
+  { id: 'INDIVIDUAL_EMPLOYER', title: 'Individual', desc: 'Hire help for your home or personal needs', icon: User, color: 'bg-blue-600' },
 ];
 
 const workerOptions: Option[] = [

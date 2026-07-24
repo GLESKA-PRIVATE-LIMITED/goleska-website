@@ -8,6 +8,7 @@ import RegisteredBusinessWizard from '@/components/onboarding/RegisteredBusiness
 import RegisteredIndustryWizard from '@/components/onboarding/RegisteredIndustryWizard';
 import KYCVerificationForm from '@/components/onboarding/KYCVerificationForm';
 import UnregisteredBusinessForm from '@/components/onboarding/UnregisteredBusinessForm';
+import IndividualEmployerForm from '@/components/onboarding/IndividualEmployerForm';
 import EmployeeForm from '@/components/onboarding/EmployeeForm';
 import EmployeeWizard from '@/components/onboarding/EmployeeWizard';
 import OnboardingSidePanel from '@/components/onboarding/OnboardingSidePanel';
@@ -15,7 +16,7 @@ import { Loader2, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import StepIndicator from '@/components/onboarding/StepIndicator';
 
-export type AccountType = 'REGISTERED_BUSINESS' | 'REGISTERED_INDUSTRY' | 'UNREGISTERED_BUSINESS' | 'EMPLOYEE' | 'INDIVIDUAL' | null;
+export type AccountType = 'REGISTERED_BUSINESS' | 'REGISTERED_INDUSTRY' | 'UNREGISTERED_BUSINESS' | 'EMPLOYEE' | 'INDIVIDUAL' | 'INDIVIDUAL_EMPLOYER' | null;
 
 export default function OnboardingPage() {
   const { session, user, loading } = useAuth();
@@ -157,6 +158,21 @@ export default function OnboardingPage() {
   if (accountType === 'UNREGISTERED_BUSINESS') {
     return (
       <UnregisteredBusinessForm
+        formData={formData}
+        updateFormData={updateFormData}
+        onBackToStart={() => {
+          setAccountType(null);
+          setCurrentStep(1);
+        }}
+        onComplete={() => router.push('/dashboard')}
+      />
+    );
+  }
+
+  // INDIVIDUAL_EMPLOYER (a private person who hires) - lightweight employer form.
+  if (accountType === 'INDIVIDUAL_EMPLOYER') {
+    return (
+      <IndividualEmployerForm
         formData={formData}
         updateFormData={updateFormData}
         onBackToStart={() => {
