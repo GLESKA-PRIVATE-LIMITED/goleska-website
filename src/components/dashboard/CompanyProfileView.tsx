@@ -21,6 +21,7 @@ import {
   Globe,
   Lock,
 } from 'lucide-react';
+import DeleteAccountSection from './DeleteAccountSection';
 
 interface Props {
   profileData: any;
@@ -347,6 +348,8 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
           </p>
         </div>
       </div>
+
+      <DeleteAccountSection userType="EMPLOYER" />
     </div>
   );
 }
