@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Building2, Mail, Phone, Hash, Briefcase, Calendar, BadgeCheck, ShieldAlert } from 'lucide-react';
+import { Building2, Mail, Phone, Hash, Briefcase, Calendar, BadgeCheck, ShieldAlert, Factory, Tag } from 'lucide-react';
 
 interface Props {
   profileData: any;
@@ -41,6 +41,7 @@ export default function CompanyProfileView({ profileData }: Props) {
   }
 
   const isVerified = Boolean(profileData.is_verified);
+  const isIndustry = profileData.account_type === 'REGISTERED_INDUSTRY';
 
   // Same completion heuristic ProfileView uses - count non-empty key fields.
   const fields = [
@@ -59,7 +60,7 @@ export default function CompanyProfileView({ profileData }: Props) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900">Company Profile</h1>
-          <p className="mt-1 text-sm text-slate-500">Your registered business details.</p>
+          <p className="mt-1 text-sm text-slate-500">{isIndustry ? 'Your registered industry details.' : 'Your registered business details.'}</p>
         </div>
         <span
           className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
@@ -81,6 +82,22 @@ export default function CompanyProfileView({ profileData }: Props) {
           <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all" style={{ width: `${completion}%` }} />
         </div>
       </div>
+
+      {/* Industry Registration - REGISTERED_INDUSTRY only, shown alongside company details */}
+      {isIndustry && (
+        <div className={cardCls}>
+          <h3 className={cardTitleCls}>Industry Registration</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <InfoRow icon={Factory} label="Industry Name" value={profileData.industry_name || profileData.company_name || 'Not provided'} />
+            {profileData.industry_type && <InfoRow icon={Tag} label="Industry Type" value={profileData.industry_type} />}
+            {profileData.nic_code && <InfoRow icon={Hash} label="NIC Code" value={profileData.nic_code} mono />}
+            {profileData.registration_number && <InfoRow icon={Hash} label="Registration Number" value={profileData.registration_number} mono />}
+            {profileData.registration_date && <InfoRow icon={Calendar} label="Registration Date" value={profileData.registration_date} />}
+            {profileData.regulatory_authority && <InfoRow icon={Building2} label="Regulatory Authority" value={profileData.regulatory_authority} />}
+            {profileData.registration_status && <InfoRow icon={BadgeCheck} label="Registration Status" value={profileData.registration_status} />}
+          </div>
+        </div>
+      )}
 
       {/* Details */}
       <div className={cardCls}>

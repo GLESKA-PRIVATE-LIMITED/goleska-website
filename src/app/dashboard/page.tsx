@@ -102,8 +102,8 @@ export default function DashboardPage() {
       const data = await empRes.json();
       setProfileData(data);
       setUserType('EMPLOYER');
-      // Business employers (registered + unregistered) get the chat-style dispatch landing.
-      if (data.account_type === 'REGISTERED_BUSINESS' || data.account_type === 'UNREGISTERED_BUSINESS') setActiveTab('DISPATCH');
+      // Business employers (registered business/industry + unregistered) get the chat-style dispatch landing.
+      if (['REGISTERED_BUSINESS', 'UNREGISTERED_BUSINESS', 'REGISTERED_INDUSTRY'].includes(data.account_type)) setActiveTab('DISPATCH');
 
       // Fetch Job Sites
       const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
@@ -383,7 +383,7 @@ export default function DashboardPage() {
       ? '1 Free Dispatch'
       : 'Subscription Required';
 
-  const isBusinessEmployer = profileData?.account_type === 'REGISTERED_BUSINESS' || profileData?.account_type === 'UNREGISTERED_BUSINESS';
+  const isBusinessEmployer = ['REGISTERED_BUSINESS', 'UNREGISTERED_BUSINESS', 'REGISTERED_INDUSTRY'].includes(profileData?.account_type);
   const profileAreaTabs = ['COMPANY', 'DIRECTOR', 'EMPLOYEE', 'PROFILE', 'SECURITY'];
   const inProfileArea = isBusinessEmployer && profileAreaTabs.includes(activeTab);
 

@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import AccountTypeSelector from '@/components/onboarding/AccountTypeSelector';
 import RegisteredBusinessWizard from '@/components/onboarding/RegisteredBusinessWizard';
-import BusinessDetailsForm from '@/components/onboarding/BusinessDetailsForm';
+import RegisteredIndustryWizard from '@/components/onboarding/RegisteredIndustryWizard';
 import KYCVerificationForm from '@/components/onboarding/KYCVerificationForm';
 import UnregisteredBusinessForm from '@/components/onboarding/UnregisteredBusinessForm';
 import EmployeeForm from '@/components/onboarding/EmployeeForm';
@@ -159,6 +159,21 @@ export default function OnboardingPage() {
     );
   }
 
+  // REGISTERED_INDUSTRY gets a dedicated 4-step left-rail wizard.
+  if (accountType === 'REGISTERED_INDUSTRY') {
+    return (
+      <RegisteredIndustryWizard
+        formData={formData}
+        updateFormData={updateFormData}
+        onBackToStart={() => {
+          setAccountType(null);
+          setCurrentStep(1);
+        }}
+        onComplete={() => router.push('/dashboard')}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
       <OnboardingSidePanel />
@@ -191,18 +206,7 @@ export default function OnboardingPage() {
           {/* Step indicator - shown during the multi-step form / KYC stages */}
           {currentStep >= 2 && <StepIndicator steps={['Account', 'Details', 'Verify']} current={currentStep} />}
 
-          {/* Wizard Steps (the account-type step 1 renders in its own full-screen layout above) */}
-          {/* REGISTERED_BUSINESS is handled by RegisteredBusinessWizard above; this shared
-              BusinessDetailsForm now serves REGISTERED_INDUSTRY only. */}
-          {currentStep === 2 && accountType === 'REGISTERED_INDUSTRY' && (
-            <BusinessDetailsForm 
-              formData={formData} 
-              updateFormData={updateFormData} 
-              onNext={nextStep} 
-              onBack={prevStep} 
-            />
-          )}
-
+          {/* Wizard steps (account-type step 1 + all business-type wizards render in their own layouts above). */}
           {currentStep === 2 && (accountType === 'EMPLOYEE' || accountType === 'INDIVIDUAL') && (
             <EmployeeForm
               accountType={accountType}
