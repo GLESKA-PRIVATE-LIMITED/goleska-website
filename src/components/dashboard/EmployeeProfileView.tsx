@@ -5,6 +5,7 @@ import { Users, Star, Droplet, Clock, Hash, BadgeCheck, Loader2, Trophy } from '
 
 interface Props {
   jwtToken: string;
+  companyRating?: number | null;
 }
 
 interface WorkerRow {
@@ -13,6 +14,7 @@ interface WorkerRow {
   account_type: string | null;
   blood_group: string | null;
   photo_url: string | null;
+  work_hours: number | null;
   overall_rating: number | null;
   total_jobs: number | null;
   is_verified: boolean;
@@ -40,7 +42,7 @@ function companyId(id: string): string {
  * by this employer (backed by GET /api/v1/employers/me/workers, which resolves
  * Job -> JobMatch -> Worker). Shows an honest empty state when there are none.
  */
-export default function EmployeeProfileView({ jwtToken }: Props) {
+export default function EmployeeProfileView({ jwtToken, companyRating }: Props) {
   const [loading, setLoading] = useState(true);
   const [workers, setWorkers] = useState<WorkerRow[]>([]);
   const [error, setError] = useState('');
@@ -66,11 +68,12 @@ export default function EmployeeProfileView({ jwtToken }: Props) {
     };
   }, [jwtToken]);
 
-  // Company ranking = average rating of the team (out of 5).
+  // Company ranking = the employer's own rating; fall back to the team average.
   const rated = workers.filter((w) => w.overall_rating != null);
-  const companyRanking = rated.length
+  const teamAvg = rated.length
     ? rated.reduce((s, w) => s + Number(w.overall_rating), 0) / rated.length
     : null;
+  const companyRanking = companyRating != null ? companyRating : teamAvg;
 
   return (
     <div className="space-y-6">
@@ -119,7 +122,7 @@ export default function EmployeeProfileView({ jwtToken }: Props) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {workers.map((w) => {
-              const workHrs = (w.total_jobs ?? 0) * 8; // ~8h per completed shift
+              const workHrs = w.work_hours != null ? w.work_hours : 0; // real hours from confirmed arrival -> completion
               return (
                 <div key={w.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <div className="mb-4 flex items-center gap-3">

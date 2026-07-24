@@ -835,7 +835,7 @@ export default function DashboardPage() {
         {/* ---- EMPLOYEE PROFILE ---- (real: workers who accepted/completed this employer's jobs) */}
         {activeTab === 'EMPLOYEE' && (
           <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
-            <EmployeeProfileView jwtToken={session?.access_token || ''} />
+            <EmployeeProfileView jwtToken={session?.access_token || ''} companyRating={profileData?.overall_rating ?? null} />
           </div>
         )}
 
