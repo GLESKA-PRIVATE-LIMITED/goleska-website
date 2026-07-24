@@ -623,19 +623,6 @@ export default function DashboardPage() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-in slide-in-from-top-2 sm:p-6">
                   <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Dispatch details</h3>
                   <div className="space-y-4">
-                    <div>
-                      <label className={labelCls}>Target Job Site</label>
-                      <select
-                        value={selectedJobSiteId}
-                        onChange={(e) => setSelectedJobSiteId(e.target.value)}
-                        className={inputCls}
-                      >
-                        {jobSites.length === 0 && <option value="">No sites found - open Job Site to create one</option>}
-                        {jobSites.map((site) => (
-                          <option key={site.id} value={site.id}>{site.name}</option>
-                        ))}
-                      </select>
-                    </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div>
                         <label className={labelCls}>Headcount</label>
