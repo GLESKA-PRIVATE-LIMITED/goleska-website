@@ -104,6 +104,14 @@ export default function OnboardingPage() {
     checkExisting();
   }, [session, user, router]);
 
+  // INDIVIDUAL uses a dedicated ChatGPT-style signup route (email/password ->
+  // phone verify -> dashboard), which works without a prior phone-OTP session.
+  useEffect(() => {
+    if (accountType === 'INDIVIDUAL') {
+      router.push('/signup/individual');
+    }
+  }, [accountType, router]);
+
   const nextStep = () => setCurrentStep(prev => prev + 1);
   const prevStep = () => setCurrentStep(prev => prev - 1);
 
@@ -189,6 +197,15 @@ export default function OnboardingPage() {
         }}
         onComplete={() => router.push('/dashboard')}
       />
+    );
+  }
+
+  // INDIVIDUAL is handled by its own dedicated signup route (redirect above).
+  if (accountType === 'INDIVIDUAL') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#eef1fb] text-sm font-bold text-slate-500">
+        <Loader2 className="mr-2 animate-spin" size={18} /> Redirecting...
+      </div>
     );
   }
 

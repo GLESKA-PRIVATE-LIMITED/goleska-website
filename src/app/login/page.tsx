@@ -200,6 +200,24 @@ function LoginPageInner() {
               </button>
             </form>
           )}
+
+          {/* Individual worker signup - a ChatGPT-style email/password entry that
+              does not require the phone-OTP login above. */}
+          {step === 'PHONE' && (
+            <>
+              <div className="my-6 flex items-center gap-3">
+                <span className="h-px flex-1 bg-slate-200" />
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">new here?</span>
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+              <Link
+                href="/signup/individual"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Sign up as an Individual worker <ArrowRight size={16} />
+              </Link>
+            </>
+          )}
         </div>
       </main>
     </div>
