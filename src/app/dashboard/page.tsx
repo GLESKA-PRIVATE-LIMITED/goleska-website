@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Zap, Loader2, CheckCircle, MapPin, ArrowRight, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
+import { Zap, Loader2, CheckCircle, MapPin, ArrowRight, ArrowLeft, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
 
 import ProfileView from '@/components/dashboard/ProfileView';
 import SecurityView from '@/components/dashboard/SecurityView';
@@ -72,6 +72,30 @@ export default function DashboardPage() {
   useEffect(() => {
     // Employer sidebar defaults expanded on desktop, collapsed on smaller screens.
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) setSidebarExpanded(true);
+  }, []);
+
+  // The dashboard's pages are state-based tabs at a single /dashboard URL. Keep
+  // the current "home" tab in a ref so the browser Back handler can return here.
+  const homeTabRef = useRef<Tab>('OVERVIEW');
+  useEffect(() => {
+    if (userType === 'WORKER') homeTabRef.current = 'WORKER_HOME';
+    else if (['REGISTERED_BUSINESS', 'UNREGISTERED_BUSINESS', 'REGISTERED_INDUSTRY'].includes(profileData?.account_type)) homeTabRef.current = 'DISPATCH';
+    else homeTabRef.current = 'OVERVIEW';
+  }, [userType, profileData]);
+
+  useEffect(() => {
+    // Trap the browser Back button inside the dashboard. Because tab navigation
+    // doesn't change the URL, a raw Back press would leave /dashboard and land
+    // on /login - which looked like an accidental logout. Instead, Back now
+    // returns to the home tab (and stays put once already there). Real sign-out
+    // is only via the explicit Log out / Sign out actions.
+    window.history.pushState({ gleska: 'dashboard' }, '');
+    const onPop = () => {
+      setActiveTab((prev) => (prev !== homeTabRef.current ? homeTabRef.current : prev));
+      window.history.pushState({ gleska: 'dashboard' }, '');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   useEffect(() => {
@@ -387,9 +411,18 @@ export default function DashboardPage() {
             <>
               {/* Top bar (account pages only) */}
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur sm:px-8">
-                <div className="min-w-0">
-                  <h1 className="truncate text-lg font-extrabold text-slate-900">{workerTitle}</h1>
-                  <p className="truncate text-xs text-slate-500">Welcome back, {profileData?.name || 'Worker'}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <button
+                    onClick={() => setActiveTab('WORKER_HOME')}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
+                    aria-label="Back to dashboard"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                  <div className="min-w-0">
+                    <h1 className="truncate text-lg font-extrabold text-slate-900">{workerTitle}</h1>
+                    <p className="truncate text-xs text-slate-500">Welcome back, {profileData?.name || 'Worker'}</p>
+                  </div>
                 </div>
               </div>
               <div className="px-4 py-8 sm:px-8 animate-in fade-in">
@@ -486,27 +519,39 @@ export default function DashboardPage() {
         <ArrivalNotifier jwtToken={session?.access_token || ''} activeJobId={activeJobId} />
 
         {/* Top bar */}
-        <div className="flex items-center justify-end gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur sm:px-8">
-          {profileData && (
-            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-              {subStatus}
-            </span>
-          )}
-          {profileData && (
-            <button
-              onClick={() => setActiveTab('COMPANY')}
-              className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-3 pr-1 transition hover:bg-slate-50"
-              title="View profile"
-            >
-              <div className="hidden min-w-0 text-right sm:block">
-                <p className="max-w-[10rem] truncate text-xs font-bold leading-tight text-slate-800">{displayName}</p>
-                <p className="text-[10px] leading-tight text-slate-400">Business Owner</p>
-              </div>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
-                {employerInitials}
-              </div>
-            </button>
-          )}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur sm:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            {activeTab !== (isBusinessEmployer ? 'DISPATCH' : 'OVERVIEW') && (
+              <button
+                onClick={() => setActiveTab(isBusinessEmployer ? 'DISPATCH' : 'OVERVIEW')}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {profileData && (
+              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                {subStatus}
+              </span>
+            )}
+            {profileData && (
+              <button
+                onClick={() => setActiveTab('COMPANY')}
+                className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-3 pr-1 transition hover:bg-slate-50"
+                title="View profile"
+              >
+                <div className="hidden min-w-0 text-right sm:block">
+                  <p className="max-w-[10rem] truncate text-xs font-bold leading-tight text-slate-800">{displayName}</p>
+                  <p className="text-[10px] leading-tight text-slate-400">Business Owner</p>
+                </div>
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+                  {employerInitials}
+                </div>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ---- OVERVIEW ---- (default employer landing) */}
