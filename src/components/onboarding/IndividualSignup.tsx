@@ -43,6 +43,21 @@ function scorePassword(pw: string): number {
   return s;
 }
 
+// Turns a backend error body into a human-readable message. FastAPI validation
+// (422) responses put an ARRAY of { loc, msg, type } objects in `detail`, which
+// would otherwise render as "[object Object]" and scare users.
+function parseApiError(err: any, fallback: string): string {
+  const d = err?.detail;
+  if (!d) return fallback;
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d)) {
+    const msgs = d.map((e: any) => e?.msg || e?.message).filter(Boolean);
+    return msgs.length ? msgs.join(', ') : fallback;
+  }
+  if (typeof d === 'object') return d.msg || d.message || fallback;
+  return fallback;
+}
+
 const STRENGTH = [
   { label: 'Too weak', color: 'bg-red-500', text: 'text-red-600' },
   { label: 'Weak', color: 'bg-red-500', text: 'text-red-600' },
@@ -103,6 +118,8 @@ export default function IndividualSignup() {
       const { data } = await supabase.auth.getSession();
       const activeSession = data.session;
       const token = activeSession?.access_token;
+      const finalName = (name || (activeSession?.user?.user_metadata?.full_name as string) || '').trim();
+      const finalEmail = (email || activeSession?.user?.email || '').trim();
       const res = await fetch(`${backendUrl}/api/v1/workers/register`, {
         method: 'POST',
         headers: {
@@ -111,8 +128,10 @@ export default function IndividualSignup() {
         },
         body: JSON.stringify({
           account_type: 'INDIVIDUAL',
-          name: name || (activeSession?.user?.user_metadata?.full_name as string) || '',
-          email: email || activeSession?.user?.email || '',
+          // Send null (not '') for empty optional fields - an empty string
+          // fails the backend's EmailStr validation and returns a 422.
+          name: finalName || null,
+          email: finalEmail || null,
           phone: activeSession?.user?.phone,
           // Individuals take dispatch gigs; a real pin is captured later on the
           // dashboard. Seed with a default location like the other worker flows.
@@ -122,9 +141,9 @@ export default function IndividualSignup() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => null);
-        const detail = (err?.detail || '').toString().toLowerCase();
-        if (!detail.includes('already')) {
-          throw new Error(err?.detail || 'We could not finish creating your account. Please try again.');
+        const msg = parseApiError(err, 'We could not finish creating your account. Please try again.');
+        if (!msg.toLowerCase().includes('already')) {
+          throw new Error(msg);
         }
       }
       router.push('/dashboard');
