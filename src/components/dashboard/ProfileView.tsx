@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase } from 'lucide-react';
+import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck } from 'lucide-react';
 
 interface Props {
   userType: 'EMPLOYER' | 'WORKER';
@@ -141,6 +141,22 @@ export default function ProfileView({ userType, profileData }: Props) {
         <h3 className={cardTitleCls}>{isEmployer ? 'Business Details' : 'Professional Details'}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <InfoRow icon={Briefcase} label="Account Type" value={profileData.account_type || userType} />
+
+          {/* Worker-only professional details (real fields from /workers/me). */}
+          {!isEmployer && (
+            <InfoRow
+              icon={IndianRupee}
+              label="Expected Wage"
+              value={profileData.expected_salary ? `₹${profileData.expected_salary} / day` : 'Not set'}
+            />
+          )}
+          {!isEmployer && (
+            <InfoRow
+              icon={CircleCheck}
+              label="Availability"
+              value={profileData.is_available ? 'Available for work' : 'Not available'}
+            />
+          )}
 
           {isEmployer && profileData.pan_number && (
             <InfoRow icon={Hash} label="PAN Number" value={profileData.pan_number} mono />

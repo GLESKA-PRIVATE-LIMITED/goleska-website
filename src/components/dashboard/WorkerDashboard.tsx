@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap } from 'lucide-react';
+import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -319,6 +319,29 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
           </p>
         </div>
       )}
+
+      {/* Available Jobs - GO LESKA uses a direct-dispatch model, so there is no
+          browsable list of open jobs yet. This section honestly explains that
+          jobs are pushed to the worker rather than browsed. */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Available Jobs</h3>
+          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600">Auto-dispatch</span>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+            <Radar size={24} />
+          </div>
+          <p className="text-sm font-bold text-slate-700">
+            {isAvailable ? "You're live - matching you to nearby jobs" : 'Go online to start receiving jobs'}
+          </p>
+          <p className="max-w-sm text-xs text-slate-400">
+            GO LESKA dispatches jobs to you directly based on your location, so there&apos;s nothing to browse. When an
+            employer nearby needs someone, you&apos;ll get an instant job offer to accept. Open-job browsing is coming
+            soon.
+          </p>
+        </div>
+      </div>
 
       {/* Recent Jobs History */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
