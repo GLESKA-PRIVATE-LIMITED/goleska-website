@@ -18,8 +18,10 @@ import DashboardOverview from '@/components/dashboard/DashboardOverview';
 import ReportsView from '@/components/dashboard/ReportsView';
 import CompanyProfileView from '@/components/dashboard/CompanyProfileView';
 import DirectorProfileView from '@/components/dashboard/DirectorProfileView';
+import EmployeeProfileView from '@/components/dashboard/EmployeeProfileView';
 import LocationSelectionView from '@/components/dashboard/LocationSelectionView';
 import EmployerSidebar from '@/components/dashboard/EmployerSidebar';
+import ProfileSidebar from '@/components/dashboard/ProfileSidebar';
 import SelectLocationModal from '@/components/dashboard/SelectLocationModal';
 import { toast } from 'sonner';
 
@@ -30,7 +32,7 @@ interface ParsedJob {
   min_experience: number;
 }
 
-type Tab = 'OVERVIEW' | 'DISPATCH' | 'WORKERS' | 'JOB_SITES' | 'REPORTS' | 'COMPANY' | 'DIRECTOR' | 'PROFILE' | 'SECURITY' | 'LOCATION';
+type Tab = 'OVERVIEW' | 'DISPATCH' | 'WORKERS' | 'JOB_SITES' | 'REPORTS' | 'COMPANY' | 'DIRECTOR' | 'EMPLOYEE' | 'PROFILE' | 'SECURITY' | 'LOCATION';
 
 const labelCls = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500';
 const inputCls = 'w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100';
@@ -382,21 +384,32 @@ export default function DashboardPage() {
       : 'Subscription Required';
 
   const isRegBusiness = profileData?.account_type === 'REGISTERED_BUSINESS';
+  const profileAreaTabs = ['COMPANY', 'DIRECTOR', 'EMPLOYEE', 'PROFILE', 'SECURITY'];
+  const inProfileArea = isRegBusiness && profileAreaTabs.includes(activeTab);
 
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
       {isRegBusiness ? (
-        <EmployerSidebar
-          jobSites={jobSites}
-          companyName={displayName}
-          expanded={sidebarExpanded}
-          onToggle={() => setSidebarExpanded((v) => !v)}
-          onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
-          onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
-          onOpenProfile={() => setActiveTab('PROFILE')}
-          onOpenSecurity={() => setActiveTab('SECURITY')}
-          onSignOut={signOut}
-        />
+        inProfileArea ? (
+          <ProfileSidebar
+            active={activeTab}
+            companyName={displayName}
+            onNavigate={(tab) => setActiveTab(tab as Tab)}
+            onSignOut={signOut}
+          />
+        ) : (
+          <EmployerSidebar
+            jobSites={jobSites}
+            companyName={displayName}
+            expanded={sidebarExpanded}
+            onToggle={() => setSidebarExpanded((v) => !v)}
+            onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
+            onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
+            onOpenProfile={() => setActiveTab('COMPANY')}
+            onOpenSecurity={() => setActiveTab('SECURITY')}
+            onSignOut={signOut}
+          />
+        )
       ) : (
         <AdminSidebar
           active={activeTab}
@@ -716,6 +729,13 @@ export default function DashboardPage() {
         {activeTab === 'DIRECTOR' && (
           <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
             <DirectorProfileView profileData={profileData} />
+          </div>
+        )}
+
+        {/* ---- EMPLOYEE PROFILE ---- (real: workers who accepted/completed this employer's jobs) */}
+        {activeTab === 'EMPLOYEE' && (
+          <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 animate-in fade-in">
+            <EmployeeProfileView jwtToken={session?.access_token || ''} />
           </div>
         )}
 
