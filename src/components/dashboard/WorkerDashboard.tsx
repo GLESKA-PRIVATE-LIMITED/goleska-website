@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar, Briefcase } from 'lucide-react';
+import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar, Briefcase, Search, ArrowRight, RefreshCw, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -71,6 +71,7 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
   const [showNavigation, setShowNavigation] = useState(false);
   const [availableJobs, setAvailableJobs] = useState<AvailableJob[]>([]);
   const [loadingAvailable, setLoadingAvailable] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchWorkerJobs();
@@ -222,44 +223,90 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
     }
   };
 
+  const name = (profileData?.name || 'there').split(' ')[0];
+  const q = searchQuery.trim().toLowerCase();
+  const filteredJobs = q
+    ? availableJobs.filter((j) => (j.title || '').toLowerCase().includes(q) || (j.employer_name || '').toLowerCase().includes(q))
+    : availableJobs;
+
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-16">
-      {/* Availability Toggle */}
-      <button
-        type="button"
-        onClick={loadingToggle ? undefined : toggleAvailability}
-        disabled={loadingToggle}
-        className={`relative w-full overflow-hidden rounded-2xl p-6 text-left shadow-xl transition ${
-          isAvailable
-            ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-emerald-500/25'
-            : 'bg-white text-slate-500 shadow-slate-300/40 ring-1 ring-slate-200'
-        }`}
-      >
-        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex items-center justify-between gap-4">
-          <div>
-            <div className="mb-1 flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${isAvailable ? 'animate-pulse bg-white' : 'bg-slate-300'}`} />
-              <span className="text-[11px] font-semibold uppercase tracking-wider">{isAvailable ? 'Online' : 'Offline'}</span>
-            </div>
-            <h2 className="text-2xl font-extrabold leading-tight">{isAvailable ? 'Searching for work' : "You're offline"}</h2>
-            <p className={`mt-1 text-sm ${isAvailable ? 'text-white/80' : 'text-slate-400'}`}>
-              {isAvailable ? 'Visible to employers nearby' : 'Tap to go online and get hired'}
-            </p>
+    <div className="mx-auto max-w-3xl space-y-6 px-1 pb-16">
+      {/* Chat-style hero */}
+      <div className="relative pt-2">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 h-56 w-[34rem] max-w-full -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-200/50 via-blue-200/40 to-transparent blur-3xl"
+        />
+        <div className="relative z-10 text-center">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
+            <Sparkles size={13} /> Your skill. Your army.
           </div>
-          <div
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition ${
-              isAvailable ? 'bg-white/15 ring-1 ring-white/25' : 'bg-slate-100'
-            }`}
-          >
-            {loadingToggle ? (
-              <Loader2 size={26} className="animate-spin" />
-            ) : (
-              <Power size={26} className={isAvailable ? 'text-white' : 'text-slate-400'} />
-            )}
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl">
+            Hey {name}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">ready to work today?</span>
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">Search nearby jobs, or go online so employers can hire you instantly.</p>
+        </div>
+
+        {/* Search + action pills */}
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/60">
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+              <Search size={16} className="text-indigo-600" />
+              <span className="hidden sm:inline">Find jobs</span>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by role - Electrician, Welder, Driver..."
+              className="min-w-0 flex-1 bg-transparent px-2 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+            />
+            <button
+              type="button"
+              onClick={fetchAvailableJobs}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white transition hover:opacity-90"
+              aria-label="Refresh jobs"
+            >
+              <ArrowRight size={18} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={loadingToggle ? undefined : toggleAvailability}
+              disabled={loadingToggle}
+              className={`flex items-center gap-3 rounded-2xl p-4 text-left text-white shadow-lg transition ${
+                isAvailable
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/25'
+                  : 'bg-gradient-to-r from-slate-500 to-slate-600 shadow-slate-400/25'
+              }`}
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                {loadingToggle ? <Loader2 size={20} className="animate-spin" /> : <Power size={20} />}
+              </div>
+              <div>
+                <p className="font-bold leading-tight">{isAvailable ? "You're Online" : "You're Offline"}</p>
+                <p className="text-xs text-white/70">{isAvailable ? 'Tap to go offline' : 'Tap to go online & get hired'}</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={fetchAvailableJobs}
+              className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-left text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                <RefreshCw size={20} />
+              </div>
+              <div>
+                <p className="font-bold leading-tight">Refresh Jobs</p>
+                <p className="text-xs text-white/70">Find the latest openings near you</p>
+              </div>
+            </button>
           </div>
         </div>
-      </button>
+      </div>
 
       {/* Active Job Card */}
       {loadingJobs ? (
@@ -380,9 +427,14 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
               you&apos;re online.
             </p>
           </div>
+        ) : filteredJobs.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center">
+            <p className="text-sm font-bold text-slate-700">No jobs match &quot;{searchQuery}&quot;</p>
+            <p className="mt-1 text-xs text-slate-400">Try a different role or clear the search.</p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {availableJobs.map((job) => (
+            {filteredJobs.map((job) => (
               <div
                 key={job.job_id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4"

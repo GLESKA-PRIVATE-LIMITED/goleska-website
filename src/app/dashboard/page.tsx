@@ -23,6 +23,7 @@ import LocationSelectionView from '@/components/dashboard/LocationSelectionView'
 import EmployerSidebar from '@/components/dashboard/EmployerSidebar';
 import ProfileSidebar from '@/components/dashboard/ProfileSidebar';
 import WorkerSidebar from '@/components/dashboard/WorkerSidebar';
+import WorkerChatSidebar from '@/components/dashboard/WorkerChatSidebar';
 import SelectLocationModal from '@/components/dashboard/SelectLocationModal';
 import { toast } from 'sonner';
 
@@ -65,6 +66,7 @@ export default function DashboardPage() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [workerJobsRefreshKey, setWorkerJobsRefreshKey] = useState(0);
+  const [workerRecents, setWorkerRecents] = useState<{ title: string; subtitle: string }[]>([]);
 
   useEffect(() => {
     // Employer sidebar defaults expanded on desktop, collapsed on smaller screens.
@@ -130,6 +132,18 @@ export default function DashboardPage() {
       setProfileData(data);
       setUserType('WORKER');
       setActiveTab('WORKER_HOME'); // Worker landing = restyled WorkerDashboard
+
+      // Recent jobs feed the chat-style worker sidebar's "Recent jobs" list.
+      try {
+        const jobsRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me/jobs`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+        if (jobsRes.ok) {
+          const jd = await jobsRes.json();
+          setWorkerRecents((jd.recent_jobs || []).map((j: any) => ({ title: j.title, subtitle: j.employer_name || 'Employer' })));
+        }
+      } catch { /* non-blocking */ }
+
       return 'FOUND';
     };
 
@@ -335,43 +349,63 @@ export default function DashboardPage() {
   }
 
   // ---------------------------------------------------------------- WORKER VIEW
-  // Restyled into the new design system: a simple worker sidebar (Dashboard /
-  // Profile / Security) + a top bar, mirroring the employer account experience
-  // without the chat-style dispatch metaphor that doesn't apply to a worker.
+  // ChatGPT / "Business Mall" style: a chat-style sidebar (Find work / Search /
+  // Recent jobs) + a centered hero on the home tab, mirroring the employer
+  // dashboard but adapted for a worker. The Profile/Security account pages use
+  // the simpler WorkerSidebar, mirroring the employer's two-sidebar split.
   if (userType === 'WORKER') {
-    const workerTitle = activeTab === 'PROFILE' ? 'My Profile' : activeTab === 'SECURITY' ? 'Security' : 'Worker Dashboard';
+    const inWorkerProfileArea = activeTab === 'PROFILE' || activeTab === 'SECURITY';
+    const workerTitle = activeTab === 'PROFILE' ? 'My Profile' : 'Security';
     return (
       <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
-        <WorkerSidebar
-          active={activeTab}
-          workerName={profileData?.name || 'Worker'}
-          isAvailable={profileData?.is_available}
-          onNavigate={(tab) => setActiveTab(tab as Tab)}
-          onSignOut={signOut}
-        />
+        {inWorkerProfileArea ? (
+          <WorkerSidebar
+            active={activeTab}
+            workerName={profileData?.name || 'Worker'}
+            isAvailable={profileData?.is_available}
+            onNavigate={(tab) => setActiveTab(tab as Tab)}
+            onSignOut={signOut}
+          />
+        ) : (
+          <WorkerChatSidebar
+            workerName={profileData?.name || 'Worker'}
+            expanded={sidebarExpanded}
+            active={activeTab}
+            recents={workerRecents}
+            isAvailable={profileData?.is_available}
+            onToggle={() => setSidebarExpanded((v) => !v)}
+            onNewChat={() => setActiveTab('WORKER_HOME')}
+            onOpenProfile={() => setActiveTab('PROFILE')}
+            onOpenSecurity={() => setActiveTab('SECURITY')}
+            onSignOut={signOut}
+          />
+        )}
 
         <main className="min-w-0 flex-1">
-          {/* Top bar */}
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur sm:px-8">
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-extrabold text-slate-900">{workerTitle}</h1>
-              <p className="truncate text-xs text-slate-500">Welcome back, {profileData?.name || 'Worker'}</p>
-            </div>
-          </div>
-
-          <div className="px-4 py-8 sm:px-8 animate-in fade-in">
-            {activeTab === 'PROFILE' ? (
-              <div className="mx-auto max-w-5xl">
-                <ProfileView userType={userType} profileData={profileData} />
+          {inWorkerProfileArea ? (
+            <>
+              {/* Top bar (account pages only) */}
+              <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur sm:px-8">
+                <div className="min-w-0">
+                  <h1 className="truncate text-lg font-extrabold text-slate-900">{workerTitle}</h1>
+                  <p className="truncate text-xs text-slate-500">Welcome back, {profileData?.name || 'Worker'}</p>
+                </div>
               </div>
-            ) : activeTab === 'SECURITY' ? (
-              <div className="mx-auto max-w-5xl">
-                <SecurityView userType={userType} profileData={profileData} />
+              <div className="px-4 py-8 sm:px-8 animate-in fade-in">
+                <div className="mx-auto max-w-5xl">
+                  {activeTab === 'PROFILE' ? (
+                    <ProfileView userType={userType} profileData={profileData} />
+                  ) : (
+                    <SecurityView userType={userType} profileData={profileData} />
+                  )}
+                </div>
               </div>
-            ) : (
+            </>
+          ) : (
+            <div className="px-4 py-8 sm:px-8 animate-in fade-in">
               <WorkerDashboard profileData={profileData} setProfileData={setProfileData} refreshSignal={workerJobsRefreshKey} />
-            )}
-          </div>
+            </div>
+          )}
         </main>
 
         {profileData?.id && (
