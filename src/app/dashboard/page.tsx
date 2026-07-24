@@ -401,7 +401,6 @@ export default function DashboardPage() {
             onToggle={() => setSidebarExpanded((v) => !v)}
             onNewChat={() => setActiveTab('WORKER_HOME')}
             onOpenProfile={() => setActiveTab('PROFILE')}
-            onOpenSecurity={() => setActiveTab('SECURITY')}
             onSignOut={signOut}
           />
         )}

@@ -6,14 +6,14 @@ import {
   Plus,
   Search,
   Settings,
-  ShieldCheck,
+  HelpCircle,
   LogOut,
   Briefcase,
   Zap,
   MessageSquare,
-  MoreVertical,
   LayoutDashboard,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface RecentItem {
   title: string;
@@ -29,15 +29,15 @@ interface Props {
   onToggle: () => void;
   onNewChat: () => void;
   onOpenProfile: () => void;
-  onOpenSecurity: () => void;
   onSignOut: () => void;
 }
 
 /**
  * Worker dashboard left navigation - the same ChatGPT / "Business Mall" chat-app
  * style used by EmployerSidebar, adapted for a worker (Find work / Search jobs /
- * Recent jobs). Expand/collapse is controlled by the parent. The account control
- * sits bottom-left with a dropdown (Profile / Security / Sign out).
+ * Recent jobs). At the bottom the account chip taps straight to Profile, and a
+ * Settings popover holds Help and Sign out (Security lives in the profile area,
+ * reachable via the chip).
  */
 export default function WorkerChatSidebar({
   workerName,
@@ -48,15 +48,14 @@ export default function WorkerChatSidebar({
   onToggle,
   onNewChat,
   onOpenProfile,
-  onOpenSecurity,
   onSignOut,
 }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
@@ -71,22 +70,18 @@ export default function WorkerChatSidebar({
       .join('')
       .toUpperCase() || 'GL';
 
-  const accountMenu = (
+  // Settings popover - Help + Sign out only (Profile/Security live in the
+  // profile area reached via the account chip).
+  const settingsMenu = (
     <>
       <button
-        onClick={() => { setMenuOpen(false); onOpenProfile(); }}
+        onClick={() => { setSettingsOpen(false); toast.info('Need help? Reach the GO LESKA team at support@goleska.in'); }}
         className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
       >
-        <Settings size={16} /> Profile
+        <HelpCircle size={16} /> Help &amp; Support
       </button>
       <button
-        onClick={() => { setMenuOpen(false); onOpenSecurity(); }}
-        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-      >
-        <ShieldCheck size={16} /> Security
-      </button>
-      <button
-        onClick={() => { setMenuOpen(false); onSignOut(); }}
+        onClick={() => { setSettingsOpen(false); onSignOut(); }}
         className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
       >
         <LogOut size={16} /> Sign out
@@ -182,7 +177,8 @@ export default function WorkerChatSidebar({
         <div className="flex-1" />
       )}
 
-      {/* Bottom: dashboard + account control (ChatGPT-style) */}
+      {/* Bottom: Dashboard, a Settings popover (Help / Sign out), and the
+          account chip which taps straight to Profile. */}
       {expanded ? (
         <div className="mt-auto border-t border-slate-200 p-2">
           <button
@@ -194,29 +190,35 @@ export default function WorkerChatSidebar({
             <LayoutDashboard size={18} /> Dashboard
           </button>
 
-          <div className="relative mt-1" ref={menuRef}>
-            {menuOpen && (
+          <div className="relative mt-1" ref={settingsRef}>
+            {settingsOpen && (
               <div className="absolute bottom-[calc(100%+0.5rem)] left-0 right-0 z-50 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
-                {accountMenu}
+                {settingsMenu}
               </div>
             )}
             <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition hover:bg-slate-100"
+              onClick={() => setSettingsOpen((v) => !v)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
-                {initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-800">{workerName || 'Worker'}</p>
-                <p className="flex items-center gap-1 truncate text-xs text-slate-400">
-                  <span className={`h-1.5 w-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                  {isAvailable ? 'Online' : 'Offline'}
-                </p>
-              </div>
-              <MoreVertical size={16} className="shrink-0 text-slate-400" />
+              <Settings size={18} /> Settings
             </button>
           </div>
+
+          <button
+            onClick={onOpenProfile}
+            className="mt-1 flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition hover:bg-slate-100"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-800">{workerName || 'Worker'}</p>
+              <p className="flex items-center gap-1 truncate text-xs text-slate-400">
+                <span className={`h-1.5 w-1.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                {isAvailable ? 'Online' : 'Offline'}
+              </p>
+            </div>
+          </button>
         </div>
       ) : (
         <div className="mt-auto flex flex-col items-center gap-1 border-t border-slate-200 p-2">
@@ -227,20 +229,27 @@ export default function WorkerChatSidebar({
           >
             <LayoutDashboard size={20} />
           </button>
-          <div className="relative" ref={menuRef}>
-            {menuOpen && (
+          <div className="relative" ref={settingsRef}>
+            {settingsOpen && (
               <div className="absolute bottom-0 left-[calc(100%+0.5rem)] z-50 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
-                {accountMenu}
+                {settingsMenu}
               </div>
             )}
             <button
-              onClick={() => setMenuOpen((v) => !v)}
-              title="Account"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white"
+              onClick={() => setSettingsOpen((v) => !v)}
+              title="Settings"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
             >
-              {initials}
+              <Settings size={20} />
             </button>
           </div>
+          <button
+            onClick={onOpenProfile}
+            title="Profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white"
+          >
+            {initials}
+          </button>
         </div>
       )}
     </aside>
