@@ -74,11 +74,17 @@ function FloatingIcon({
 }
 
 export default function AccountTypeSelector({ selectedType, onSelect, initialSide = null }: Props) {
-  const [side, setSide] = useState<'WORKER' | 'EMPLOYER' | null>(initialSide);
+  // The worker/employer side is ALREADY chosen on the landing page (?type=) and
+  // carried in onboardingSide. We never re-ask it here. Default to EMPLOYER on the
+  // first (SSR-consistent) render, then correct from initialSide / localStorage in
+  // an effect - reading localStorage during render would cause a hydration mismatch.
+  const [side, setSide] = useState<'WORKER' | 'EMPLOYER'>(initialSide ?? 'EMPLOYER');
 
   useEffect(() => {
     if (initialSide) {
       setSide(initialSide);
+    } else if (typeof window !== 'undefined' && localStorage.getItem('onboardingSide') === 'WORKER') {
+      setSide('WORKER');
     }
   }, [initialSide]);
 
@@ -105,83 +111,39 @@ export default function AccountTypeSelector({ selectedType, onSelect, initialSid
             <span className="font-[var(--font-anton)] text-xl uppercase tracking-wider text-slate-900">GO LESKA</span>
           </div>
 
-          {!side ? (
-            <>
-              <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
-                What brings you to <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">GO LESKA</span>?
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">Choose how you&apos;d like to participate in the marketplace.</p>
+          <>
+            <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
+              Choose your <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">account</span>
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">Select the option that best describes you.</p>
 
-              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <button
-                  onClick={() => setSide('EMPLOYER')}
-                  className="group flex flex-col items-center rounded-2xl border border-indigo-100 bg-white p-6 text-center transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-100"
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white transition group-hover:scale-105">
-                    <Users size={30} />
-                  </div>
-                  <h3 className="mt-4 text-lg font-bold text-slate-900">I Need Workers</h3>
-                  <p className="mt-1 text-xs font-medium text-slate-500">Hire blue-collar workforce instantly</p>
-                </button>
-
-                <button
-                  onClick={() => setSide('WORKER')}
-                  className="group flex flex-col items-center rounded-2xl border border-indigo-100 bg-white p-6 text-center transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100"
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white transition group-hover:scale-105">
-                    <Hammer size={30} />
-                  </div>
-                  <h3 className="mt-4 text-lg font-bold text-slate-900">I Need Work</h3>
-                  <p className="mt-1 text-xs font-medium text-slate-500">Find daily gigs or full-time jobs</p>
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
-                Choose your <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">account</span>
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">Select the option that best describes you.</p>
-
-              <div className="mt-6 space-y-3">
-                {options.map((opt) => {
-                  const Icon = opt.icon;
-                  const isSelected = selectedType === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => onSelect(opt.id)}
-                      className={`group flex w-full items-center gap-4 rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-indigo-100 ${
-                        isSelected
-                          ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200'
-                          : 'border-indigo-100 bg-white hover:border-indigo-300'
-                      }`}
-                    >
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white ${opt.color}`}>
-                        <Icon size={22} />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-slate-900">{opt.title}</h3>
-                        <p className="text-sm text-slate-500">{opt.desc}</p>
-                      </div>
-                      <ChevronRight className="ml-auto shrink-0 text-indigo-300 transition group-hover:text-indigo-500" size={20} />
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Allow returning to the category picker only when the side wasn't
-                  locked in from the landing page (preserves initialSide behavior). */}
-              {!initialSide && (
-                <button
-                  onClick={() => setSide(null)}
-                  className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-slate-400 transition hover:text-indigo-600"
-                >
-                  <ArrowLeft size={12} /> Change category
-                </button>
-              )}
-            </>
-          )}
+            <div className="mt-6 space-y-3">
+              {options.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = selectedType === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => onSelect(opt.id)}
+                    className={`group flex w-full items-center gap-4 rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-indigo-100 ${
+                      isSelected
+                        ? 'border-indigo-400 bg-indigo-50/60 ring-1 ring-indigo-200'
+                        : 'border-indigo-100 bg-white hover:border-indigo-300'
+                    }`}
+                  >
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white ${opt.color}`}>
+                      <Icon size={22} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-slate-900">{opt.title}</h3>
+                      <p className="text-sm text-slate-500">{opt.desc}</p>
+                    </div>
+                    <ChevronRight className="ml-auto shrink-0 text-indigo-300 transition group-hover:text-indigo-500" size={20} />
+                  </button>
+                );
+              })}
+            </div>
+          </>
         </div>
       </div>
 

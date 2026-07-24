@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ArrowLeft, Loader2, Mail, Phone, Zap } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Mail, Phone, Zap, Hammer, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import OnboardingSidePanel from '@/components/onboarding/OnboardingSidePanel';
@@ -28,6 +28,7 @@ function LoginPageInner() {
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [side, setSide] = useState<'WORKER' | 'EMPLOYER' | null>(null);
   
   const { signInWithOtp, verifyOtp } = useAuth();
   const router = useRouter();
@@ -36,7 +37,12 @@ function LoginPageInner() {
   React.useEffect(() => {
     const type = searchParams.get('type');
     if (type === 'worker' || type === 'employer') {
-      localStorage.setItem('onboardingSide', type === 'worker' ? 'WORKER' : 'EMPLOYER');
+      const s = type === 'worker' ? 'WORKER' : 'EMPLOYER';
+      localStorage.setItem('onboardingSide', s);
+      setSide(s);
+    } else {
+      const saved = localStorage.getItem('onboardingSide');
+      if (saved === 'WORKER' || saved === 'EMPLOYER') setSide(saved);
     }
   }, [searchParams]);
 
@@ -125,6 +131,18 @@ function LoginPageInner() {
           </Link>
 
           <div className="mb-6">
+            {side && (
+              <div
+                className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                  side === 'WORKER'
+                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                    : 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200'
+                }`}
+              >
+                {side === 'WORKER' ? <Hammer size={13} /> : <Briefcase size={13} />}
+                {side === 'WORKER' ? 'I want work' : 'I need workers'}
+              </div>
+            )}
             <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
               Enter the <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Factory</span>
             </h1>
