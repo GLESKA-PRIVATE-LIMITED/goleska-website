@@ -102,8 +102,8 @@ export default function DashboardPage() {
       const data = await empRes.json();
       setProfileData(data);
       setUserType('EMPLOYER');
-      // REGISTERED_BUSINESS gets the chat-style dispatch experience as its landing.
-      if (data.account_type === 'REGISTERED_BUSINESS') setActiveTab('DISPATCH');
+      // Business employers (registered + unregistered) get the chat-style dispatch landing.
+      if (data.account_type === 'REGISTERED_BUSINESS' || data.account_type === 'UNREGISTERED_BUSINESS') setActiveTab('DISPATCH');
 
       // Fetch Job Sites
       const siteRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
@@ -383,17 +383,18 @@ export default function DashboardPage() {
       ? '1 Free Dispatch'
       : 'Subscription Required';
 
-  const isRegBusiness = profileData?.account_type === 'REGISTERED_BUSINESS';
+  const isBusinessEmployer = profileData?.account_type === 'REGISTERED_BUSINESS' || profileData?.account_type === 'UNREGISTERED_BUSINESS';
   const profileAreaTabs = ['COMPANY', 'DIRECTOR', 'EMPLOYEE', 'PROFILE', 'SECURITY'];
-  const inProfileArea = isRegBusiness && profileAreaTabs.includes(activeTab);
+  const inProfileArea = isBusinessEmployer && profileAreaTabs.includes(activeTab);
 
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
-      {isRegBusiness ? (
+      {isBusinessEmployer ? (
         inProfileArea ? (
           <ProfileSidebar
             active={activeTab}
             companyName={displayName}
+            accountType={profileData?.account_type}
             onNavigate={(tab) => setActiveTab(tab as Tab)}
             onSignOut={signOut}
           />
@@ -502,7 +503,7 @@ export default function DashboardPage() {
                 className="pointer-events-none absolute left-1/2 top-0 h-56 w-[34rem] max-w-full -translate-x-1/2 rounded-full bg-gradient-to-br from-indigo-200/50 via-blue-200/40 to-transparent blur-3xl"
               />
               <div className="relative z-10 text-center">
-                {(!isRegBusiness || !sidebarExpanded) && (
+                {(!isBusinessEmployer || !sidebarExpanded) && (
                   <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-indigo-700">
                     <Sparkles size={13} /> AI - Powered Hiring
                   </div>

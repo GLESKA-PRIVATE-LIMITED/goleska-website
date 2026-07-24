@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { LayoutDashboard, UserCog, Landmark, Users, FileText, ShieldCheck, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, UserCog, User, Landmark, Users, FileText, ShieldCheck, LogOut, Zap } from 'lucide-react';
 
 interface NavItem {
   key: string;
@@ -12,27 +12,27 @@ interface NavItem {
 interface Props {
   active: string;
   companyName: string;
+  accountType?: string;
   onNavigate: (tab: string) => void;
   onSignOut: () => void;
 }
 
-// "Dashboard" navigates back to the main dispatch dashboard (same destination
-// as the old "Overview", just relabeled). The rest map to profile-area tabs.
-const NAV: NavItem[] = [
-  { key: 'DISPATCH', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'DIRECTOR', label: 'Director profile', icon: UserCog },
-  { key: 'COMPANY', label: 'Company profile', icon: Landmark },
-  { key: 'EMPLOYEE', label: 'Employee profile', icon: Users },
-  { key: 'PROFILE', label: 'Documents', icon: FileText },
-  { key: 'SECURITY', label: 'Security', icon: ShieldCheck },
-];
-
 /**
- * Profile/account-area sidebar for REGISTERED_BUSINESS employers. Shown when the
- * user is inside their profile area (Company/Director/Employee/Documents/Security);
- * outside it, the chat-style EmployerSidebar (dispatch) is used instead.
+ * Profile/account-area sidebar for business employers (registered + unregistered).
+ * Shown when the user is inside their profile area (Company/Director-or-Proprietor/
+ * Employee/Documents/Security); outside it, the chat-style EmployerSidebar is used.
+ * For UNREGISTERED_BUSINESS the "Director profile" item becomes "Proprietor profile".
  */
-export default function ProfileSidebar({ active, companyName, onNavigate, onSignOut }: Props) {
+export default function ProfileSidebar({ active, companyName, accountType, onNavigate, onSignOut }: Props) {
+  const isUnregistered = accountType === 'UNREGISTERED_BUSINESS';
+  const NAV: NavItem[] = [
+    { key: 'DISPATCH', label: 'Dashboard', icon: LayoutDashboard },
+    { key: 'DIRECTOR', label: isUnregistered ? 'Proprietor profile' : 'Director profile', icon: isUnregistered ? User : UserCog },
+    { key: 'COMPANY', label: 'Company profile', icon: Landmark },
+    { key: 'EMPLOYEE', label: 'Employee profile', icon: Users },
+    { key: 'PROFILE', label: 'Documents', icon: FileText },
+    { key: 'SECURITY', label: 'Security', icon: ShieldCheck },
+  ];
   const initials =
     String(companyName || 'GL')
       .trim()
