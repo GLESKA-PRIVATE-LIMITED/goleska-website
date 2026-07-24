@@ -500,6 +500,7 @@ export default function DashboardPage() {
           <EmployerSidebar
             jobSites={jobSites}
             companyName={displayName}
+            accountType={profileData?.account_type}
             expanded={sidebarExpanded}
             onToggle={() => setSidebarExpanded((v) => !v)}
             onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}

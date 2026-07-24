@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 interface Props {
   jobSites: any[];
   companyName: string;
+  accountType?: string;
   expanded: boolean;
   onToggle: () => void;
   onNewChat: () => void;
@@ -40,6 +41,7 @@ interface Props {
 export default function EmployerSidebar({
   jobSites,
   companyName,
+  accountType,
   expanded,
   onToggle,
   onNewChat,
@@ -49,6 +51,7 @@ export default function EmployerSidebar({
 }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const isIndividual = accountType === 'INDIVIDUAL';
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -196,8 +199,8 @@ export default function EmployerSidebar({
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-800">{companyName || 'My Company'}</p>
-              <p className="truncate text-xs text-slate-400">Business Owner</p>
+              <p className="truncate text-sm font-semibold text-slate-800">{companyName || (isIndividual ? 'My Account' : 'My Company')}</p>
+              <p className="truncate text-xs text-slate-400">{isIndividual ? 'Individual' : 'Business Owner'}</p>
             </div>
           </button>
         </div>

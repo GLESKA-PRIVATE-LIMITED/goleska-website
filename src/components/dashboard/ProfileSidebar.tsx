@@ -25,14 +25,24 @@ interface Props {
  */
 export default function ProfileSidebar({ active, companyName, accountType, onNavigate, onSignOut }: Props) {
   const isUnregistered = accountType === 'UNREGISTERED_BUSINESS';
-  const NAV: NavItem[] = [
-    { key: 'DISPATCH', label: 'Dashboard', icon: LayoutDashboard },
-    { key: 'DIRECTOR', label: isUnregistered ? 'Proprietor profile' : 'Director profile', icon: isUnregistered ? User : UserCog },
-    { key: 'COMPANY', label: 'Company profile', icon: Landmark },
-    { key: 'EMPLOYEE', label: 'Employee profile', icon: Users },
-    { key: 'PROFILE', label: 'Documents', icon: FileText },
-    { key: 'SECURITY', label: 'Security', icon: ShieldCheck },
-  ];
+  const isIndividual = accountType === 'INDIVIDUAL';
+  // An individual employer has no company/director - just their own profile.
+  const NAV: NavItem[] = isIndividual
+    ? [
+        { key: 'DISPATCH', label: 'Dashboard', icon: LayoutDashboard },
+        { key: 'COMPANY', label: 'My profile', icon: User },
+        { key: 'EMPLOYEE', label: 'Hired workers', icon: Users },
+        { key: 'PROFILE', label: 'Documents', icon: FileText },
+        { key: 'SECURITY', label: 'Security', icon: ShieldCheck },
+      ]
+    : [
+        { key: 'DISPATCH', label: 'Dashboard', icon: LayoutDashboard },
+        { key: 'DIRECTOR', label: isUnregistered ? 'Proprietor profile' : 'Director profile', icon: isUnregistered ? User : UserCog },
+        { key: 'COMPANY', label: 'Company profile', icon: Landmark },
+        { key: 'EMPLOYEE', label: 'Employee profile', icon: Users },
+        { key: 'PROFILE', label: 'Documents', icon: FileText },
+        { key: 'SECURITY', label: 'Security', icon: ShieldCheck },
+      ];
   const initials =
     String(companyName || 'GL')
       .trim()
@@ -82,7 +92,7 @@ export default function ProfileSidebar({ active, companyName, accountType, onNav
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
             {initials}
           </div>
-          <p className="min-w-0 truncate text-sm font-semibold text-slate-700">{companyName || 'My Company'}</p>
+          <p className="min-w-0 truncate text-sm font-semibold text-slate-700">{companyName || (isIndividual ? 'My Account' : 'My Company')}</p>
         </div>
         <button
           onClick={onSignOut}

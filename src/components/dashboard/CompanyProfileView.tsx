@@ -148,6 +148,7 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
 
   const isVerified = Boolean(profileData.is_verified);
   const isIndustry = profileData.account_type === 'REGISTERED_INDUSTRY';
+  const isIndividual = profileData.account_type === 'INDIVIDUAL';
 
   const set = (k: keyof EditForm) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -218,8 +219,8 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Company Profile</h1>
-          <p className="mt-1 text-sm text-slate-500">{isIndustry ? 'Your registered industry details.' : 'Your registered business details.'}</p>
+          <h1 className="text-2xl font-extrabold text-slate-900">{isIndividual ? 'My Profile' : 'Company Profile'}</h1>
+          <p className="mt-1 text-sm text-slate-500">{isIndividual ? 'Your personal account details.' : isIndustry ? 'Your registered industry details.' : 'Your registered business details.'}</p>
         </div>
         <div className="flex items-center gap-2">
           <span
@@ -299,12 +300,12 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
 
       {/* Company Details */}
       <div className={cardCls}>
-        <h3 className={cardTitleCls}>Company Details</h3>
+        <h3 className={cardTitleCls}>{isIndividual ? 'My Details' : 'Company Details'}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {editing ? (
             <>
-              <EditField icon={Building2} label="Company Name" value={form.company_name} onChange={set('company_name')} />
-              <EditField icon={Briefcase} label="Business Category" value={form.business_category} onChange={set('business_category')} placeholder="e.g. Construction" />
+              <EditField icon={Building2} label={isIndividual ? 'Full Name' : 'Company Name'} value={form.company_name} onChange={set('company_name')} />
+              <EditField icon={Briefcase} label={isIndividual ? 'Looking For' : 'Business Category'} value={form.business_category} onChange={set('business_category')} placeholder={isIndividual ? 'e.g. Driver, Cook' : 'e.g. Construction'} />
               <EditField icon={Globe} label="Website" value={form.website_url} onChange={set('website_url')} placeholder="https://" />
               <div className="min-w-0 sm:col-span-2">
                 <label className={labelCls}>Description</label>
@@ -312,16 +313,16 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
                   value={form.description}
                   onChange={(e) => set('description')(e.target.value)}
                   rows={3}
-                  placeholder="Tell workers about your company"
+                  placeholder={isIndividual ? 'Tell workers about yourself' : 'Tell workers about your company'}
                   className={inputCls}
                 />
               </div>
             </>
           ) : (
             <>
-              <InfoRow icon={Building2} label="Company Name" value={profileData.company_name || 'Not provided'} />
-              <InfoRow icon={Briefcase} label="Account Type" value={profileData.account_type || 'Not provided'} />
-              {profileData.business_category && <InfoRow icon={Briefcase} label="Business Category" value={profileData.business_category} />}
+              <InfoRow icon={Building2} label={isIndividual ? 'Full Name' : 'Company Name'} value={profileData.company_name || 'Not provided'} />
+              <InfoRow icon={Briefcase} label="Account Type" value={isIndividual ? 'Individual' : profileData.account_type || 'Not provided'} />
+              {profileData.business_category && <InfoRow icon={Briefcase} label={isIndividual ? 'Looking For' : 'Business Category'} value={profileData.business_category} />}
               {profileData.website_url && <InfoRow icon={Globe} label="Website" value={profileData.website_url} />}
               {profileData.description && (
                 <div className="min-w-0 sm:col-span-2">
@@ -332,8 +333,8 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
           )}
 
           {/* Locked / KYC / auth fields - always read-only */}
-          <LockedRow icon={Mail} label="Company Email" value={profileData.email || 'Not provided'} />
-          <LockedRow icon={Phone} label="Company Number" value={profileData.phone || 'Not provided'} mono />
+          <LockedRow icon={Mail} label={isIndividual ? 'Email' : 'Company Email'} value={profileData.email || 'Not provided'} />
+          <LockedRow icon={Phone} label={isIndividual ? 'Phone' : 'Company Number'} value={profileData.phone || 'Not provided'} mono />
           {profileData.gstin && <LockedRow icon={Hash} label="GST Number" value={profileData.gstin} mono />}
           {profileData.cin_number && <LockedRow icon={Hash} label="CIN Number" value={profileData.cin_number} mono />}
           {profileData.pan_number && <LockedRow icon={Hash} label="PAN Number" value={profileData.pan_number} mono />}
@@ -342,8 +343,9 @@ export default function CompanyProfileView({ profileData, onUpdated }: Props) {
 
         <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4">
           <p className="text-xs font-medium leading-relaxed text-indigo-900/80">
-            Note: Verified KYC details (GST, PAN, CIN), your registered email and phone are locked. You can edit your
-            company name, business info{isIndustry ? ' and industry registration details' : ''}.
+            {isIndividual
+              ? 'Note: Your registered email and phone are locked. You can edit your name and details anytime.'
+              : `Note: Verified KYC details (GST, PAN, CIN), your registered email and phone are locked. You can edit your company name, business info${isIndustry ? ' and industry registration details' : ''}.`}
           </p>
         </div>
       </div>
