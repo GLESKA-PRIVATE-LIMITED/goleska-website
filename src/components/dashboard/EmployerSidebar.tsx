@@ -19,6 +19,7 @@ interface Props {
   onNewChat: () => void;
   onSelectSite: (id: string) => void;
   onOpenProfile: () => void;
+  onOpenSecurity: () => void;
 }
 
 /**
@@ -41,7 +42,17 @@ export default function EmployerSidebar({
   onNewChat,
   onSelectSite,
   onOpenProfile,
+  onOpenSecurity,
 }: Props) {
+  const initials =
+    String(companyName || 'GL')
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'GL';
+
   return (
     <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white transition-all duration-200 ${expanded ? 'w-64' : 'w-16'}`}>
       {/* Top: hamburger + brand */}
@@ -125,25 +136,47 @@ export default function EmployerSidebar({
         <div className="flex-1" />
       )}
 
-      {/* Bottom: settings gear -> opens the Profile / account area (which holds
-          Security + Sign out). No account dropdown here anymore. */}
+      {/* Bottom (ChatGPT-style): Settings, then the account/profile chip -
+          both stacked at the bottom. Tapping the chip goes straight to Profile;
+          Settings opens account security. Security + Sign out live in the
+          profile area (ProfileSidebar's Security tab + Log out, and
+          SecurityView's "Sign out of this device"). */}
       {expanded ? (
         <div className="mt-auto border-t border-slate-200 p-2">
           <button
-            onClick={onOpenProfile}
+            onClick={onOpenSecurity}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
           >
             <Settings size={18} /> Settings
+          </button>
+          <button
+            onClick={onOpenProfile}
+            className="mt-1 flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition hover:bg-slate-100"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-800">{companyName || 'My Company'}</p>
+              <p className="truncate text-xs text-slate-400">Business Owner</p>
+            </div>
           </button>
         </div>
       ) : (
         <div className="mt-auto flex flex-col items-center gap-1 border-t border-slate-200 p-2">
           <button
-            onClick={onOpenProfile}
+            onClick={onOpenSecurity}
             title="Settings"
             className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
           >
             <Settings size={20} />
+          </button>
+          <button
+            onClick={onOpenProfile}
+            title="Profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white"
+          >
+            {initials}
           </button>
         </div>
       )}

@@ -469,14 +469,6 @@ export default function DashboardPage() {
       : 'Subscription Required';
 
   const isBusinessEmployer = ['REGISTERED_BUSINESS', 'UNREGISTERED_BUSINESS', 'REGISTERED_INDUSTRY'].includes(profileData?.account_type);
-  const employerInitials =
-    String(displayName || 'GL')
-      .trim()
-      .split(/\s+/)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase() || 'GL';
   const profileAreaTabs = ['COMPANY', 'DIRECTOR', 'EMPLOYEE', 'PROFILE', 'SECURITY'];
   const inProfileArea = isBusinessEmployer && profileAreaTabs.includes(activeTab);
 
@@ -500,6 +492,7 @@ export default function DashboardPage() {
             onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
             onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
             onOpenProfile={() => setActiveTab('COMPANY')}
+            onOpenSecurity={() => setActiveTab('SECURITY')}
           />
         )
       ) : (
@@ -535,21 +528,6 @@ export default function DashboardPage() {
               <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
                 {subStatus}
               </span>
-            )}
-            {profileData && (
-              <button
-                onClick={() => setActiveTab('COMPANY')}
-                className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-3 pr-1 transition hover:bg-slate-50"
-                title="View profile"
-              >
-                <div className="hidden min-w-0 text-right sm:block">
-                  <p className="max-w-[10rem] truncate text-xs font-bold leading-tight text-slate-800">{displayName}</p>
-                  <p className="text-[10px] leading-tight text-slate-400">Business Owner</p>
-                </div>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
-                  {employerInitials}
-                </div>
-              </button>
             )}
           </div>
         </div>
