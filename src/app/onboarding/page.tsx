@@ -10,44 +10,11 @@ import KYCVerificationForm from '@/components/onboarding/KYCVerificationForm';
 import UnregisteredBusinessForm from '@/components/onboarding/UnregisteredBusinessForm';
 import EmployeeForm from '@/components/onboarding/EmployeeForm';
 import OnboardingSidePanel from '@/components/onboarding/OnboardingSidePanel';
-import { Loader2, Zap, Check } from 'lucide-react';
+import { Loader2, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import StepIndicator from '@/components/onboarding/StepIndicator';
 
 export type AccountType = 'REGISTERED_BUSINESS' | 'REGISTERED_INDUSTRY' | 'UNREGISTERED_BUSINESS' | 'EMPLOYEE' | 'INDIVIDUAL' | null;
-
-function StepIndicator({ current }: { current: number }) {
-  const steps = ['Account', 'Details', 'Verify'];
-  return (
-    <div className="mb-8 flex items-start">
-      {steps.map((label, i) => {
-        const n = i + 1;
-        const done = current > n;
-        const active = current === n;
-        return (
-          <React.Fragment key={label}>
-            <div className="flex flex-col items-center">
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition ${
-                  active || done
-                    ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                    : 'bg-slate-100 text-slate-400'
-                }`}
-              >
-                {done ? <Check size={16} /> : n}
-              </div>
-              <span className={`mt-2 text-[11px] font-semibold ${active || done ? 'text-slate-700' : 'text-slate-400'}`}>
-                {label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div className={`mt-[18px] h-0.5 flex-1 rounded ${current > n ? 'bg-indigo-500' : 'bg-slate-200'}`} />
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function OnboardingPage() {
   const { session, user, loading } = useAuth();
@@ -177,6 +144,21 @@ export default function OnboardingPage() {
     );
   }
 
+  // UNREGISTERED_BUSINESS gets a dedicated 3-step (top-indicator) wizard.
+  if (accountType === 'UNREGISTERED_BUSINESS') {
+    return (
+      <UnregisteredBusinessForm
+        formData={formData}
+        updateFormData={updateFormData}
+        onBackToStart={() => {
+          setAccountType(null);
+          setCurrentStep(1);
+        }}
+        onComplete={() => router.push('/dashboard')}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
       <OnboardingSidePanel />
@@ -207,7 +189,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* Step indicator - shown during the multi-step form / KYC stages */}
-          {currentStep >= 2 && <StepIndicator current={currentStep} />}
+          {currentStep >= 2 && <StepIndicator steps={['Account', 'Details', 'Verify']} current={currentStep} />}
 
           {/* Wizard Steps (the account-type step 1 renders in its own full-screen layout above) */}
           {/* REGISTERED_BUSINESS is handled by RegisteredBusinessWizard above; this shared
@@ -217,15 +199,6 @@ export default function OnboardingPage() {
               formData={formData} 
               updateFormData={updateFormData} 
               onNext={nextStep} 
-              onBack={prevStep} 
-            />
-          )}
-
-          {currentStep === 2 && accountType === 'UNREGISTERED_BUSINESS' && (
-            <UnregisteredBusinessForm
-              formData={formData} 
-              updateFormData={updateFormData} 
-              onComplete={nextStep} 
               onBack={prevStep} 
             />
           )}
