@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Zap, Loader2, CheckCircle, Clock, MapPin, ArrowRight, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
+import { Zap, Loader2, CheckCircle, MapPin, ArrowRight, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
 
 import ProfileView from '@/components/dashboard/ProfileView';
 import SecurityView from '@/components/dashboard/SecurityView';
@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [showHireOptions, setShowHireOptions] = useState(false);
   const [workerJobsRefreshKey, setWorkerJobsRefreshKey] = useState(0);
   const [workerRecents, setWorkerRecents] = useState<{ title: string; subtitle: string }[]>([]);
 
@@ -435,6 +436,14 @@ export default function DashboardPage() {
       : 'Subscription Required';
 
   const isBusinessEmployer = ['REGISTERED_BUSINESS', 'UNREGISTERED_BUSINESS', 'REGISTERED_INDUSTRY'].includes(profileData?.account_type);
+  const employerInitials =
+    String(displayName || 'GL')
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'GL';
   const profileAreaTabs = ['COMPANY', 'DIRECTOR', 'EMPLOYEE', 'PROFILE', 'SECURITY'];
   const inProfileArea = isBusinessEmployer && profileAreaTabs.includes(activeTab);
 
@@ -458,8 +467,6 @@ export default function DashboardPage() {
             onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
             onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
             onOpenProfile={() => setActiveTab('COMPANY')}
-            onOpenSecurity={() => setActiveTab('SECURITY')}
-            onSignOut={signOut}
           />
         )
       ) : (
@@ -484,6 +491,21 @@ export default function DashboardPage() {
             <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
               {subStatus}
             </span>
+          )}
+          {profileData && (
+            <button
+              onClick={() => setActiveTab('COMPANY')}
+              className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white py-1 pl-3 pr-1 transition hover:bg-slate-50"
+              title="View profile"
+            >
+              <div className="hidden min-w-0 text-right sm:block">
+                <p className="max-w-[10rem] truncate text-xs font-bold leading-tight text-slate-800">{displayName}</p>
+                <p className="text-[10px] leading-tight text-slate-400">Business Owner</p>
+              </div>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+                {employerInitials}
+              </div>
+            </button>
           )}
         </div>
 
@@ -570,11 +592,15 @@ export default function DashboardPage() {
             <form onSubmit={handleFormSubmit} className="mt-8 space-y-4 text-left">
               {/* Segmented pill input row */}
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/60">
-                <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setShowHireOptions((v) => !v)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                >
                   <Users size={16} className="text-indigo-600" />
                   <span className="hidden sm:inline">I Want to hire</span>
-                  <ChevronDown size={14} className="text-slate-400" />
-                </div>
+                  <ChevronDown size={14} className={`text-slate-400 transition-transform ${showHireOptions ? 'rotate-180' : ''}`} />
+                </button>
                 <input
                   type="text"
                   value={formRole}
@@ -591,6 +617,42 @@ export default function DashboardPage() {
                   <ArrowRight size={18} />
                 </button>
               </div>
+
+              {/* Dispatch options - revealed by tapping the "I Want to hire" pill */}
+              {showHireOptions && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-in slide-in-from-top-2 sm:p-6">
+                  <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Dispatch details</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className={labelCls}>Target Job Site</label>
+                      <select
+                        value={selectedJobSiteId}
+                        onChange={(e) => setSelectedJobSiteId(e.target.value)}
+                        className={inputCls}
+                      >
+                        {jobSites.length === 0 && <option value="">No sites found - open Job Site to create one</option>}
+                        {jobSites.map((site) => (
+                          <option key={site.id} value={site.id}>{site.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div>
+                        <label className={labelCls}>Headcount</label>
+                        <input type="number" min={1} value={formHeadcount} onChange={(e) => setFormHeadcount(parseInt(e.target.value) || 0)} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Salary / Day (Rs)</label>
+                        <input type="number" min={0} value={formSalary} onChange={(e) => setFormSalary(parseInt(e.target.value) || 0)} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={labelCls}>Min Experience (Yrs)</label>
+                        <input type="number" min={0} value={formExperience} onChange={(e) => setFormExperience(parseInt(e.target.value) || 0)} className={inputCls} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Location pill buttons */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -616,40 +678,6 @@ export default function DashboardPage() {
                     <p className="text-xs text-white/70">Accurate and faster</p>
                   </div>
                 </button>
-              </div>
-
-              {/* Existing dispatch fields - restyled, same state/handlers */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Dispatch details</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className={labelCls}>Target Job Site</label>
-                    <select
-                      value={selectedJobSiteId}
-                      onChange={(e) => setSelectedJobSiteId(e.target.value)}
-                      className={inputCls}
-                    >
-                      {jobSites.length === 0 && <option value="">No sites found - open Job Site to create one</option>}
-                      {jobSites.map((site) => (
-                        <option key={site.id} value={site.id}>{site.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div>
-                      <label className={labelCls}>Headcount</label>
-                      <input type="number" min={1} value={formHeadcount} onChange={(e) => setFormHeadcount(parseInt(e.target.value) || 0)} className={inputCls} />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Salary / Day (Rs)</label>
-                      <input type="number" min={0} value={formSalary} onChange={(e) => setFormSalary(parseInt(e.target.value) || 0)} className={inputCls} />
-                    </div>
-                    <div>
-                      <label className={labelCls}>Min Experience (Yrs)</label>
-                      <input type="number" min={0} value={formExperience} onChange={(e) => setFormExperience(parseInt(e.target.value) || 0)} className={inputCls} />
-                    </div>
-                  </div>
-                </div>
               </div>
             </form>
 
@@ -704,41 +732,38 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Live Feed */}
-            <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                <h2 className="text-sm font-bold text-slate-900">Live Feed</h2>
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-600">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span> Connected
+            {/* Live Feed - only visible once a dispatch is active */}
+            {activeJobId && (
+              <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                  <h2 className="text-sm font-bold text-slate-900">Live Feed</h2>
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-600">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span> Connected
+                  </div>
+                </div>
+                <div className="max-h-[360px] space-y-3 overflow-y-auto p-4">
+                  {matches.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-3 py-10 text-slate-500">
+                      <Loader2 className="animate-spin text-indigo-600" size={40} />
+                      <p className="text-sm font-medium">Waiting for workers to accept...</p>
+                    </div>
+                  ) : (
+                    matches.map((match, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 animate-in slide-in-from-right-4">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                          <CheckCircle size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900">Worker #{match.worker_id.substring(0, 6)}</p>
+                          <p className="text-xs text-slate-500">Accepted in {Math.floor(Math.random() * 45 + 5)}s</p>
+                        </div>
+                        <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Accepted</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-              <div className="max-h-[360px] space-y-3 overflow-y-auto p-4">
-                {!activeJobId ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-10 text-slate-400">
-                    <Clock size={40} strokeWidth={1.5} />
-                    <p className="text-sm font-medium">Waiting for active dispatch...</p>
-                  </div>
-                ) : matches.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-10 text-slate-500">
-                    <Loader2 className="animate-spin text-indigo-600" size={40} />
-                    <p className="text-sm font-medium">Waiting for workers to accept...</p>
-                  </div>
-                ) : (
-                  matches.map((match, i) => (
-                    <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 animate-in slide-in-from-right-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-                        <CheckCircle size={20} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-900">Worker #{match.worker_id.substring(0, 6)}</p>
-                        <p className="text-xs text-slate-500">Accepted in {Math.floor(Math.random() * 45 + 5)}s</p>
-                      </div>
-                      <span className="ml-auto rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Accepted</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            )}
           </div>
         )}
 

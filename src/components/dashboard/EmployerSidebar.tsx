@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import {
   Menu,
   Plus,
   Search,
   Settings,
-  ShieldCheck,
-  LogOut,
   MapPin,
   Zap,
   MessageSquare,
-  MoreVertical,
 } from 'lucide-react';
 
 interface Props {
@@ -22,16 +19,19 @@ interface Props {
   onNewChat: () => void;
   onSelectSite: (id: string) => void;
   onOpenProfile: () => void;
-  onOpenSecurity: () => void;
-  onSignOut: () => void;
 }
 
 /**
  * Employer dashboard left navigation (ChatGPT / "Business Mall" chat-app style),
- * used for REGISTERED_BUSINESS employers. Expand/collapse is controlled by the
- * parent so the dispatch hero can react (e.g. show the "AI - Powered Hiring"
- * badge only when collapsed). The account control lives at the bottom-left and
- * opens a dropdown of account actions (Settings / Security / Sign out).
+ * shared by all business employers (REGISTERED_BUSINESS, REGISTERED_INDUSTRY,
+ * UNREGISTERED_BUSINESS).
+ *
+ * The account entry point follows the reference pattern: the name + avatar live
+ * top-right in the top bar (see dashboard page) and tap straight through to the
+ * Profile area - there is no bottom-left account chip / dropdown here anymore.
+ * The settings gear stays at the bottom of the sidebar and also opens the
+ * Profile/account area, where Security and Sign out live (ProfileSidebar's
+ * "Security" tab + "Log out", and SecurityView's "Sign out of this device").
  */
 export default function EmployerSidebar({
   jobSites,
@@ -41,52 +41,7 @@ export default function EmployerSidebar({
   onNewChat,
   onSelectSite,
   onOpenProfile,
-  onOpenSecurity,
-  onSignOut,
 }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, []);
-
-  const initials =
-    String(companyName || 'GL')
-      .trim()
-      .split(/\s+/)
-      .map((w) => w[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase() || 'GL';
-
-  const accountMenu = (
-    <>
-      <button
-        onClick={() => { setMenuOpen(false); onOpenProfile(); }}
-        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-      >
-        <Settings size={16} /> Settings
-      </button>
-      <button
-        onClick={() => { setMenuOpen(false); onOpenSecurity(); }}
-        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-      >
-        <ShieldCheck size={16} /> Security
-      </button>
-      <button
-        onClick={() => { setMenuOpen(false); onSignOut(); }}
-        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-      >
-        <LogOut size={16} /> Sign out
-      </button>
-    </>
-  );
-
   return (
     <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white transition-all duration-200 ${expanded ? 'w-64' : 'w-16'}`}>
       {/* Top: hamburger + brand */}
@@ -170,7 +125,8 @@ export default function EmployerSidebar({
         <div className="flex-1" />
       )}
 
-      {/* Bottom: settings gear + account control (moved here, ChatGPT-style) */}
+      {/* Bottom: settings gear -> opens the Profile / account area (which holds
+          Security + Sign out). No account dropdown here anymore. */}
       {expanded ? (
         <div className="mt-auto border-t border-slate-200 p-2">
           <button
@@ -179,27 +135,6 @@ export default function EmployerSidebar({
           >
             <Settings size={18} /> Settings
           </button>
-
-          <div className="relative mt-1" ref={menuRef}>
-            {menuOpen && (
-              <div className="absolute bottom-[calc(100%+0.5rem)] left-0 right-0 z-50 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
-                {accountMenu}
-              </div>
-            )}
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition hover:bg-slate-100"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
-                {initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-800">{companyName || 'My Company'}</p>
-                <p className="truncate text-xs text-slate-400">Business Owner</p>
-              </div>
-              <MoreVertical size={16} className="shrink-0 text-slate-400" />
-            </button>
-          </div>
         </div>
       ) : (
         <div className="mt-auto flex flex-col items-center gap-1 border-t border-slate-200 p-2">
@@ -210,20 +145,6 @@ export default function EmployerSidebar({
           >
             <Settings size={20} />
           </button>
-          <div className="relative" ref={menuRef}>
-            {menuOpen && (
-              <div className="absolute bottom-0 left-[calc(100%+0.5rem)] z-50 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
-                {accountMenu}
-              </div>
-            )}
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              title="Account"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white"
-            >
-              {initials}
-            </button>
-          </div>
         </div>
       )}
     </aside>
