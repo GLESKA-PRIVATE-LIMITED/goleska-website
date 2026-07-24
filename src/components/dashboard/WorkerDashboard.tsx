@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar, Briefcase, Search, ArrowRight, RefreshCw, Sparkles } from 'lucide-react';
+import { Power, Navigation, Clock, CheckCircle, Loader2, ShieldCheck, Zap, Radar, Briefcase, ChevronDown, ArrowRight, RefreshCw, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -72,6 +72,7 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
   const [availableJobs, setAvailableJobs] = useState<AvailableJob[]>([]);
   const [loadingAvailable, setLoadingAvailable] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showWorkOptions, setShowWorkOptions] = useState(false);
 
   useEffect(() => {
     fetchWorkerJobs();
@@ -250,10 +251,15 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
         {/* Search + action pills */}
         <div className="mt-8 space-y-4">
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/60">
-            <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
-              <Search size={16} className="text-indigo-600" />
-              <span className="hidden sm:inline">Find jobs</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowWorkOptions((v) => !v)}
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            >
+              <Briefcase size={16} className="text-indigo-600" />
+              <span className="hidden sm:inline">I want work</span>
+              <ChevronDown size={14} className={`text-slate-400 transition-transform ${showWorkOptions ? 'rotate-180' : ''}`} />
+            </button>
             <input
               type="text"
               value={searchQuery}
@@ -271,40 +277,42 @@ export default function WorkerDashboard({ profileData, setProfileData, refreshSi
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={loadingToggle ? undefined : toggleAvailability}
-              disabled={loadingToggle}
-              className={`flex items-center gap-3 rounded-2xl p-4 text-left text-white shadow-lg transition ${
-                isAvailable
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/25'
-                  : 'bg-gradient-to-r from-slate-500 to-slate-600 shadow-slate-400/25'
-              }`}
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                {loadingToggle ? <Loader2 size={20} className="animate-spin" /> : <Power size={20} />}
-              </div>
-              <div>
-                <p className="font-bold leading-tight">{isAvailable ? "You're Online" : "You're Offline"}</p>
-                <p className="text-xs text-white/70">{isAvailable ? 'Tap to go offline' : 'Tap to go online & get hired'}</p>
-              </div>
-            </button>
+          {showWorkOptions && (
+            <div className="grid grid-cols-1 gap-3 animate-in slide-in-from-top-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={loadingToggle ? undefined : toggleAvailability}
+                disabled={loadingToggle}
+                className={`flex items-center gap-3 rounded-2xl p-4 text-left text-white shadow-lg transition ${
+                  isAvailable
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/25'
+                    : 'bg-gradient-to-r from-slate-500 to-slate-600 shadow-slate-400/25'
+                }`}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                  {loadingToggle ? <Loader2 size={20} className="animate-spin" /> : <Power size={20} />}
+                </div>
+                <div>
+                  <p className="font-bold leading-tight">{isAvailable ? "You're Online" : "You're Offline"}</p>
+                  <p className="text-xs text-white/70">{isAvailable ? 'Tap to go offline' : 'Tap to go online & get hired'}</p>
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={fetchAvailableJobs}
-              className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-left text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                <RefreshCw size={20} />
-              </div>
-              <div>
-                <p className="font-bold leading-tight">Refresh Jobs</p>
-                <p className="text-xs text-white/70">Find the latest openings near you</p>
-              </div>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={fetchAvailableJobs}
+                className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-left text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                  <RefreshCw size={20} />
+                </div>
+                <div>
+                  <p className="font-bold leading-tight">Refresh Jobs</p>
+                  <p className="text-xs text-white/70">Find the latest openings near you</p>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
