@@ -77,6 +77,10 @@ export default function DashboardPage() {
   // The dashboard's pages are state-based tabs at a single /dashboard URL. Keep
   // the current "home" tab in a ref so the browser Back handler can return here.
   const homeTabRef = useRef<Tab>('OVERVIEW');
+  // Load the profile + set the default landing tab only ONCE. Supabase refreshes
+  // the access token periodically, which changes `session`; without this guard the
+  // profile effect would re-run and yank the user back to the dashboard tab.
+  const profileLoadedRef = useRef(false);
   useEffect(() => {
     if (userType === 'WORKER') homeTabRef.current = 'WORKER_HOME';
     else if (['REGISTERED_BUSINESS', 'UNREGISTERED_BUSINESS', 'REGISTERED_INDUSTRY'].includes(profileData?.account_type)) homeTabRef.current = 'DISPATCH';
@@ -118,6 +122,9 @@ export default function DashboardPage() {
       router.push('/login');
       return;
     }
+    // Only run once. A token refresh changes `session` but must not reset the tab.
+    if (profileLoadedRef.current) return;
+    profileLoadedRef.current = true;
 
     const tryEmployer = async (): Promise<'FOUND' | 'NOT_FOUND' | 'FORBIDDEN'> => {
       const empRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
