@@ -10,6 +10,7 @@ import {
   Monitor,
   LogOut,
 } from 'lucide-react';
+import DeleteAccountSection from './DeleteAccountSection';
 
 interface Props {
   userType: 'EMPLOYER' | 'WORKER';
@@ -26,7 +27,7 @@ function formatDate(value?: string): string {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-export default function SecurityView({ profileData }: Props) {
+export default function SecurityView({ userType, profileData }: Props) {
   const { user, signOut } = useAuth();
 
   // Only real, backend-backed security info is rendered here. Anything without
@@ -110,6 +111,8 @@ export default function SecurityView({ profileData }: Props) {
           <LogOut size={16} /> Sign out of this device
         </button>
       </div>
+
+      <DeleteAccountSection userType={userType} />
     </div>
   );
 }

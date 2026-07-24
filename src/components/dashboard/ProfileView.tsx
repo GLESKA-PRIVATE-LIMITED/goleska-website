@@ -1,6 +1,5 @@
 import React from 'react';
 import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck } from 'lucide-react';
-import DeleteAccountSection from './DeleteAccountSection';
 
 interface Props {
   userType: 'EMPLOYER' | 'WORKER';
@@ -231,8 +230,6 @@ export default function ProfileView({ userType, profileData }: Props) {
           </div>
         </div>
       )}
-
-      <DeleteAccountSection userType={userType} />
     </div>
   );
 }
