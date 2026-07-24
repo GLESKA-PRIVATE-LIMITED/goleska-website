@@ -88,8 +88,10 @@ export default function AccountTypeSelector({ selectedType, onSelect, initialSid
     }
   }, [initialSide]);
 
-  // Employers see all 5 account types; workers keep their 2-option subset.
-  const options = side === 'WORKER' ? workerOptions : [...employerOptions, ...workerOptions];
+  // Keep the two sides clean: "I need workers" shows only the 3 business types,
+  // "I want work" shows only the 2 worker types (Employment Candidate + Individual).
+  // Individual is a WORKER account - it must never appear on the employer side.
+  const options = side === 'WORKER' ? workerOptions : employerOptions;
 
   return (
     <div className="flex min-h-screen w-full bg-[#eef1fb] font-sans text-slate-900">
