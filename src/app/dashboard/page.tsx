@@ -492,7 +492,7 @@ export default function DashboardPage() {
             onNewChat={() => { setActiveTab('DISPATCH'); setParsedJob(null); setFormRole(''); }}
             onSelectSite={(id) => { setSelectedJobSiteId(id); setActiveTab('DISPATCH'); }}
             onOpenProfile={() => setActiveTab('COMPANY')}
-            onOpenSecurity={() => setActiveTab('SECURITY')}
+            onSignOut={signOut}
           />
         )
       ) : (

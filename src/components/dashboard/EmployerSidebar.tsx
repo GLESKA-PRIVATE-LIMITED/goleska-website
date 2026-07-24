@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Menu,
   Plus,
@@ -9,7 +9,10 @@ import {
   MapPin,
   Zap,
   MessageSquare,
+  HelpCircle,
+  LogOut,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   jobSites: any[];
@@ -19,7 +22,7 @@ interface Props {
   onNewChat: () => void;
   onSelectSite: (id: string) => void;
   onOpenProfile: () => void;
-  onOpenSecurity: () => void;
+  onSignOut: () => void;
 }
 
 /**
@@ -42,8 +45,19 @@ export default function EmployerSidebar({
   onNewChat,
   onSelectSite,
   onOpenProfile,
-  onOpenSecurity,
+  onSignOut,
 }: Props) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
   const initials =
     String(companyName || 'GL')
       .trim()
@@ -52,6 +66,25 @@ export default function EmployerSidebar({
       .slice(0, 2)
       .join('')
       .toUpperCase() || 'GL';
+
+  // Settings menu items - deliberately NOT the profile/company or security
+  // pages (those live in the profile area, reachable via the account chip).
+  const settingsMenu = (
+    <>
+      <button
+        onClick={() => { setSettingsOpen(false); toast.info('Need help? Reach the GO LESKA team at support@goleska.in'); }}
+        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+      >
+        <HelpCircle size={16} /> Help &amp; Support
+      </button>
+      <button
+        onClick={() => { setSettingsOpen(false); onSignOut(); }}
+        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+      >
+        <LogOut size={16} /> Sign out
+      </button>
+    </>
+  );
 
   return (
     <aside className={`sticky top-0 flex h-screen shrink-0 flex-col border-r border-slate-200 bg-white transition-all duration-200 ${expanded ? 'w-64' : 'w-16'}`}>
@@ -136,19 +169,25 @@ export default function EmployerSidebar({
         <div className="flex-1" />
       )}
 
-      {/* Bottom (ChatGPT-style): Settings, then the account/profile chip -
-          both stacked at the bottom. Tapping the chip goes straight to Profile;
-          Settings opens account security. Security + Sign out live in the
-          profile area (ProfileSidebar's Security tab + Log out, and
-          SecurityView's "Sign out of this device"). */}
+      {/* Bottom (ChatGPT-style): a Settings menu (Security / Help / Sign out),
+          then the account/profile chip - both stacked at the bottom. The chip
+          goes straight to Profile; Settings opens a small popover (it does NOT
+          re-open the profile page). */}
       {expanded ? (
         <div className="mt-auto border-t border-slate-200 p-2">
-          <button
-            onClick={onOpenSecurity}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
-          >
-            <Settings size={18} /> Settings
-          </button>
+          <div className="relative" ref={settingsRef}>
+            {settingsOpen && (
+              <div className="absolute bottom-[calc(100%+0.5rem)] left-0 right-0 z-50 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
+                {settingsMenu}
+              </div>
+            )}
+            <button
+              onClick={() => setSettingsOpen((v) => !v)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            >
+              <Settings size={18} /> Settings
+            </button>
+          </div>
           <button
             onClick={onOpenProfile}
             className="mt-1 flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition hover:bg-slate-100"
@@ -164,13 +203,20 @@ export default function EmployerSidebar({
         </div>
       ) : (
         <div className="mt-auto flex flex-col items-center gap-1 border-t border-slate-200 p-2">
-          <button
-            onClick={onOpenSecurity}
-            title="Settings"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
-          >
-            <Settings size={20} />
-          </button>
+          <div className="relative" ref={settingsRef}>
+            {settingsOpen && (
+              <div className="absolute bottom-0 left-[calc(100%+0.5rem)] z-50 w-44 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/40">
+                {settingsMenu}
+              </div>
+            )}
+            <button
+              onClick={() => setSettingsOpen((v) => !v)}
+              title="Settings"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100"
+            >
+              <Settings size={20} />
+            </button>
+          </div>
           <button
             onClick={onOpenProfile}
             title="Profile"
