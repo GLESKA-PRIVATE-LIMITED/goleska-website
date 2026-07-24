@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { LogOut, Zap, Loader2, CheckCircle, Clock, MapPin, ArrowRight, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
+import { Zap, Loader2, CheckCircle, Clock, MapPin, ArrowRight, XCircle, Sparkles, Users, ChevronDown } from 'lucide-react';
 
 import ProfileView from '@/components/dashboard/ProfileView';
 import SecurityView from '@/components/dashboard/SecurityView';
@@ -22,6 +22,7 @@ import EmployeeProfileView from '@/components/dashboard/EmployeeProfileView';
 import LocationSelectionView from '@/components/dashboard/LocationSelectionView';
 import EmployerSidebar from '@/components/dashboard/EmployerSidebar';
 import ProfileSidebar from '@/components/dashboard/ProfileSidebar';
+import WorkerSidebar from '@/components/dashboard/WorkerSidebar';
 import SelectLocationModal from '@/components/dashboard/SelectLocationModal';
 import { toast } from 'sonner';
 
@@ -32,7 +33,7 @@ interface ParsedJob {
   min_experience: number;
 }
 
-type Tab = 'OVERVIEW' | 'DISPATCH' | 'WORKERS' | 'JOB_SITES' | 'REPORTS' | 'COMPANY' | 'DIRECTOR' | 'EMPLOYEE' | 'PROFILE' | 'SECURITY' | 'LOCATION';
+type Tab = 'OVERVIEW' | 'DISPATCH' | 'WORKERS' | 'JOB_SITES' | 'REPORTS' | 'COMPANY' | 'DIRECTOR' | 'EMPLOYEE' | 'PROFILE' | 'SECURITY' | 'LOCATION' | 'WORKER_HOME';
 
 const labelCls = 'mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500';
 const inputCls = 'w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100';
@@ -128,7 +129,7 @@ export default function DashboardPage() {
       const data = await workerRes.json();
       setProfileData(data);
       setUserType('WORKER');
-      setActiveTab('PROFILE'); // Workers don't have dispatch yet
+      setActiveTab('WORKER_HOME'); // Worker landing = restyled WorkerDashboard
       return 'FOUND';
     };
 
@@ -334,27 +335,43 @@ export default function DashboardPage() {
   }
 
   // ---------------------------------------------------------------- WORKER VIEW
-  // (unchanged experience - simple top bar + WorkerDashboard)
+  // Restyled into the new design system: a simple worker sidebar (Dashboard /
+  // Profile / Security) + a top bar, mirroring the employer account experience
+  // without the chat-style dispatch metaphor that doesn't apply to a worker.
   if (userType === 'WORKER') {
+    const workerTitle = activeTab === 'PROFILE' ? 'My Profile' : activeTab === 'SECURITY' ? 'Security' : 'Worker Dashboard';
     return (
-      <div className="min-h-screen bg-[var(--color-paper)] font-sans">
-        <nav className="bg-[var(--color-charcoal)] text-white border-b-8 border-[var(--color-saffron)] px-4 sm:px-6 py-4 flex justify-between items-center gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 bg-[var(--color-saffron)] text-[var(--color-charcoal)] border-2 border-white flex items-center justify-center font-[var(--font-anton)] text-2xl transform -rotate-3 shrink-0">
-              GL
-            </div>
+      <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
+        <WorkerSidebar
+          active={activeTab}
+          workerName={profileData?.name || 'Worker'}
+          isAvailable={profileData?.is_available}
+          onNavigate={(tab) => setActiveTab(tab as Tab)}
+          onSignOut={signOut}
+        />
+
+        <main className="min-w-0 flex-1">
+          {/* Top bar */}
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/70 px-4 py-3 backdrop-blur sm:px-8">
             <div className="min-w-0">
-              <h1 className="font-[var(--font-anton)] text-xl sm:text-2xl leading-none uppercase tracking-wide">Worker Hub</h1>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1 truncate">{profileData?.name}</p>
+              <h1 className="truncate text-lg font-extrabold text-slate-900">{workerTitle}</h1>
+              <p className="truncate text-xs text-slate-500">Welcome back, {profileData?.name || 'Worker'}</p>
             </div>
           </div>
-          <button onClick={signOut} className="flex items-center gap-2 font-bold text-sm uppercase hover:text-[var(--color-saffron)] transition-colors shrink-0">
-            <LogOut size={16} /> Sign Out
-          </button>
-        </nav>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <WorkerDashboard profileData={profileData} setProfileData={setProfileData} refreshSignal={workerJobsRefreshKey} />
+          <div className="px-4 py-8 sm:px-8 animate-in fade-in">
+            {activeTab === 'PROFILE' ? (
+              <div className="mx-auto max-w-5xl">
+                <ProfileView userType={userType} profileData={profileData} />
+              </div>
+            ) : activeTab === 'SECURITY' ? (
+              <div className="mx-auto max-w-5xl">
+                <SecurityView userType={userType} profileData={profileData} />
+              </div>
+            ) : (
+              <WorkerDashboard profileData={profileData} setProfileData={setProfileData} refreshSignal={workerJobsRefreshKey} />
+            )}
+          </div>
         </main>
 
         {profileData?.id && (
