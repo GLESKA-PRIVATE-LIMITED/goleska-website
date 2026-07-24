@@ -9,6 +9,7 @@ import RegisteredIndustryWizard from '@/components/onboarding/RegisteredIndustry
 import KYCVerificationForm from '@/components/onboarding/KYCVerificationForm';
 import UnregisteredBusinessForm from '@/components/onboarding/UnregisteredBusinessForm';
 import EmployeeForm from '@/components/onboarding/EmployeeForm';
+import EmployeeWizard from '@/components/onboarding/EmployeeWizard';
 import OnboardingSidePanel from '@/components/onboarding/OnboardingSidePanel';
 import { Loader2, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -174,6 +175,23 @@ export default function OnboardingPage() {
     );
   }
 
+  // EMPLOYEE ("Employment Candidate") gets a dedicated 4-step left-rail wizard
+  // (Personal / Address / Verification (PAN + ID & liveness) / Review).
+  // INDIVIDUAL keeps the shared EmployeeForm + KYC flow below.
+  if (accountType === 'EMPLOYEE') {
+    return (
+      <EmployeeWizard
+        formData={formData}
+        updateFormData={updateFormData}
+        onBackToStart={() => {
+          setAccountType(null);
+          setCurrentStep(1);
+        }}
+        onComplete={() => router.push('/dashboard')}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#eef1fb] font-sans text-slate-900">
       <OnboardingSidePanel />
@@ -207,7 +225,7 @@ export default function OnboardingPage() {
           {currentStep >= 2 && <StepIndicator steps={['Account', 'Details', 'Verify']} current={currentStep} />}
 
           {/* Wizard steps (account-type step 1 + all business-type wizards render in their own layouts above). */}
-          {currentStep === 2 && (accountType === 'EMPLOYEE' || accountType === 'INDIVIDUAL') && (
+          {currentStep === 2 && accountType === 'INDIVIDUAL' && (
             <EmployeeForm
               accountType={accountType}
               formData={formData} 
