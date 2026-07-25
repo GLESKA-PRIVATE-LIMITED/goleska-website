@@ -1,9 +1,11 @@
 import React from 'react';
 import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck } from 'lucide-react';
+import WorkerProfileView from './WorkerProfileView';
 
 interface Props {
   userType: 'EMPLOYER' | 'WORKER';
   profileData: any;
+  onUpdated?: (data: any) => void;
 }
 
 const cardCls = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6';
@@ -33,7 +35,12 @@ function formatAddress(addr: any): string {
   return '';
 }
 
-export default function ProfileView({ userType, profileData }: Props) {
+export default function ProfileView({ userType, profileData, onUpdated }: Props) {
+  // Workers get the dedicated, editable "Your Profile" layout.
+  if (userType === 'WORKER') {
+    return <WorkerProfileView profileData={profileData} onUpdated={onUpdated} />;
+  }
+
   if (!profileData) {
     return (
       <div className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white p-10 text-sm font-bold text-slate-500 shadow-sm">

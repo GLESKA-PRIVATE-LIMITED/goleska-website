@@ -434,7 +434,7 @@ export default function DashboardPage() {
               <div className="px-4 py-8 sm:px-8 animate-in fade-in">
                 <div className="mx-auto max-w-5xl">
                   {activeTab === 'PROFILE' ? (
-                    <ProfileView userType={userType} profileData={profileData} />
+                    <ProfileView userType={userType} profileData={profileData} onUpdated={setProfileData} />
                   ) : (
                     <SecurityView userType={userType} profileData={profileData} />
                   )}
