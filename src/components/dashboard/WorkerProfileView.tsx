@@ -24,6 +24,7 @@ import {
   X,
   Plus,
   Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -184,6 +185,21 @@ export default function WorkerProfileView({ profileData, onUpdated }: Props) {
     setSkillDraft('');
   };
   const removeSkill = (s: string) => setForm((f) => ({ ...f, skills: f.skills.filter((x) => x !== s) }));
+
+  // Opens the uploaded government ID via a short-lived signed URL from the backend.
+  const viewIdDocument = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/worker/id-url`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!res.ok) throw new Error('Could not load the document.');
+      const d = await res.json();
+      if (d.signed_url) window.open(d.signed_url, '_blank', 'noopener');
+      else throw new Error('No document found.');
+    } catch (e: any) {
+      toast.error(e.message || 'Could not open the document.');
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -414,7 +430,7 @@ export default function WorkerProfileView({ profileData, onUpdated }: Props) {
             <h3 className={cardTitleCls}><FileText size={16} /> Documents</h3>
             <p className="mt-1 text-xs text-slate-400">Verification documents on your account.</p>
             <div className="mt-4 space-y-3">
-              <DocRow label="ID Document" done={Boolean(profileData.kyc_document_url)} />
+              <DocRow label="ID Document" done={Boolean(profileData.kyc_document_url)} onView={profileData.kyc_document_url ? viewIdDocument : undefined} />
               <DocRow label="Liveness Selfie" done={Boolean(profileData.photo_url)} />
             </div>
           </div>
@@ -453,7 +469,7 @@ export default function WorkerProfileView({ profileData, onUpdated }: Props) {
   );
 }
 
-function DocRow({ label, done }: { label: string; done: boolean }) {
+function DocRow({ label, done, onView }: { label: string; done: boolean; onView?: () => void }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
@@ -469,6 +485,14 @@ function DocRow({ label, done }: { label: string; done: boolean }) {
           {done ? 'On file' : 'Pending'}
         </span>
       </div>
+      {onView && (
+        <button
+          onClick={onView}
+          className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50"
+        >
+          <ExternalLink size={13} /> View
+        </button>
+      )}
     </div>
   );
 }

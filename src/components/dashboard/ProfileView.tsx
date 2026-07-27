@@ -1,5 +1,9 @@
+"use client";
+
 import React from 'react';
-import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck } from 'lucide-react';
+import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck, ExternalLink } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 import WorkerProfileView from './WorkerProfileView';
 
 interface Props {
@@ -36,6 +40,23 @@ function formatAddress(addr: any): string {
 }
 
 export default function ProfileView({ userType, profileData, onUpdated }: Props) {
+  const { session } = useAuth();
+
+  // Opens the uploaded business document via a short-lived signed URL.
+  const viewBusinessDoc = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/employer/business-url`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!res.ok) throw new Error('Could not load the document.');
+      const d = await res.json();
+      if (d.signed_url) window.open(d.signed_url, '_blank', 'noopener');
+      else throw new Error('No document found.');
+    } catch (e: any) {
+      toast.error(e.message || 'Could not open the document.');
+    }
+  };
+
   // Workers get the dedicated, editable "Your Profile" layout.
   if (userType === 'WORKER') {
     return <WorkerProfileView profileData={profileData} onUpdated={onUpdated} />;
@@ -87,9 +108,9 @@ export default function ProfileView({ userType, profileData, onUpdated }: Props)
   const strength = Math.round((filled / strengthFields.length) * 100);
 
   // Documents - only surface what the object actually carries.
-  const docs: { label: string }[] = [];
+  const docs: { label: string; view?: 'business' }[] = [];
   if (profileData.kyc_document_url) docs.push({ label: 'KYC Document' });
-  if (profileData.business_document_url) docs.push({ label: 'Business Document' });
+  if (profileData.business_document_url) docs.push({ label: 'Business Document', view: 'business' });
 
   const permAddress = formatAddress(profileData.permanent_address);
   const currAddress = formatAddress(profileData.current_address);
@@ -215,12 +236,20 @@ export default function ProfileView({ userType, profileData, onUpdated }: Props)
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
                   <FileText size={18} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-800">{doc.label}</p>
                   <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                     On file
                   </span>
                 </div>
+                {doc.view === 'business' && (
+                  <button
+                    onClick={viewBusinessDoc}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50"
+                  >
+                    <ExternalLink size={13} /> View
+                  </button>
+                )}
               </div>
             ))}
           </div>
