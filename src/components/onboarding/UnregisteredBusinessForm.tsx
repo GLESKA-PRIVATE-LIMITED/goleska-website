@@ -58,6 +58,12 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
   const [panResult, setPanResult] = useState<{ valid: boolean; company_name: string; cin_number: string } | null>(null);
   const [panError, setPanError] = useState('');
 
+  // Udyam is OPTIONAL (recommended) - never blocks submission.
+  const [loadingUdyam, setLoadingUdyam] = useState(false);
+  const [udyamVerified, setUdyamVerified] = useState(false);
+  const [udyamResult, setUdyamResult] = useState<{ valid: boolean; company_name: string } | null>(null);
+  const [udyamError, setUdyamError] = useState('');
+
   const [registering, setRegistering] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -92,6 +98,34 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
       setPanError(err.message || 'PAN verification failed. Please try again.');
     } finally {
       setLoadingPan(false);
+    }
+  };
+
+  // Optional Udyam (MSME) verification - reuses POST /api/v1/kyc/verify-udyam.
+  const handleVerifyUdyam = async () => {
+    setUdyamError('');
+    if (!formData.udyam_number?.trim()) {
+      setUdyamError('Please enter your Udyam registration number.');
+      return;
+    }
+    setLoadingUdyam(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/kyc/verify-udyam`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ udyam_number: formData.udyam_number }),
+      });
+      if (!res.ok) throw new Error('Udyam verification failed. Please check the number and try again.');
+      const data = await res.json();
+      setUdyamResult({ valid: data.valid, company_name: data.company_name });
+      setUdyamVerified(true);
+      updateFormData({ udyam_details: data.raw_details });
+    } catch (err: any) {
+      setUdyamVerified(false);
+      setUdyamResult(null);
+      setUdyamError(err.message || 'Udyam verification failed. Please try again.');
+    } finally {
+      setLoadingUdyam(false);
     }
   };
 
@@ -402,6 +436,46 @@ export default function UnregisteredBusinessForm({ formData, updateFormData, onC
                   </div>
                 </div>
               )}
+
+              {/* Optional: Udyam (MSME) registration verify */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                <div className="mb-1 flex items-center justify-between">
+                  <label className={labelCls + ' mb-0'}>Udyam Registration <span className="font-normal text-slate-400">(optional)</span></label>
+                  {udyamVerified && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600"><Check size={14} /> Verified</span>
+                  )}
+                </div>
+                <p className="mb-3 text-xs text-slate-500">Recommended for MSMEs - boosts your trust score.</p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Hash className={iconCls} size={18} />
+                    <input
+                      type="text"
+                      value={formData.udyam_number || ''}
+                      onChange={(e) => { updateFormData({ udyam_number: e.target.value.toUpperCase() }); setUdyamVerified(false); setUdyamResult(null); }}
+                      disabled={udyamVerified}
+                      className={inputCls + ' pl-11 uppercase disabled:opacity-60'}
+                      placeholder="UDYAM-XX-00-0000000"
+                    />
+                  </div>
+                  {!udyamVerified && (
+                    <button
+                      type="button"
+                      onClick={handleVerifyUdyam}
+                      disabled={loadingUdyam || !(formData.udyam_number || '').trim()}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {loadingUdyam ? <Loader2 className="animate-spin" size={16} /> : 'Verify'}
+                    </button>
+                  )}
+                </div>
+                {udyamVerified && udyamResult && (
+                  <p className="mt-2 text-xs font-semibold text-emerald-700">{udyamResult.company_name}</p>
+                )}
+                {udyamError && (
+                  <p className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600"><AlertCircle size={13} /> {udyamError}</p>
+                )}
+              </div>
 
               {submitError && (
                 <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">

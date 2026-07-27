@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Mail, Phone, Hash, BadgeCheck, FileText, MapPin, Home, Briefcase, IndianRupee, CircleCheck, ExternalLink, Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import WorkerProfileView from './WorkerProfileView';
@@ -41,6 +41,9 @@ function formatAddress(addr: any): string {
 
 export default function ProfileView({ userType, profileData, onUpdated }: Props) {
   const { session } = useAuth();
+  const [bizFile, setBizFile] = useState<File | null>(null);
+  const [bizGst, setBizGst] = useState('');
+  const [bizUploading, setBizUploading] = useState(false);
 
   // Opens the uploaded business document via a short-lived signed URL.
   const viewBusinessDoc = async () => {
@@ -54,6 +57,37 @@ export default function ProfileView({ userType, profileData, onUpdated }: Props)
       else throw new Error('No document found.');
     } catch (e: any) {
       toast.error(e.message || 'Could not open the document.');
+    }
+  };
+
+  // Uploads a business document and marks the employer verified (verify-business).
+  const handleBusinessUpload = async () => {
+    if (!bizFile) { toast.error('Please choose a document to upload.'); return; }
+    setBizUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', bizFile);
+      if (bizGst.trim()) fd.append('gstin', bizGst.trim());
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/employer/verify-business`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        body: fd,
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => null);
+        throw new Error(e?.detail || 'Upload failed. Please try again.');
+      }
+      const me = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (me.ok) onUpdated?.(await me.json());
+      toast.success('Business document uploaded and verified.');
+      setBizFile(null);
+      setBizGst('');
+    } catch (e: any) {
+      toast.error(e.message || 'Upload failed.');
+    } finally {
+      setBizUploading(false);
     }
   };
 
@@ -222,6 +256,62 @@ export default function ProfileView({ userType, profileData, onUpdated }: Props)
           </p>
         </div>
       </div>
+
+      {/* Business Verification - upload document + verify (employer) */}
+      {isEmployer && (
+        <div className={cardCls}>
+          <div className="mb-1 flex items-center justify-between">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Business Verification</h3>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                profileData.is_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {profileData.is_verified && <BadgeCheck size={13} />} {profileData.is_verified ? 'Verified' : 'Pending'}
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-slate-500">Upload your business registration / GST document to verify your account.</p>
+
+          {profileData.business_document_url && (
+            <button
+              onClick={viewBusinessDoc}
+              className="mb-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50"
+            >
+              <ExternalLink size={13} /> View current document
+            </button>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Document (PDF/Image)</p>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={(e) => setBizFile(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-600 hover:file:bg-indigo-100"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">GSTIN (optional)</p>
+              <input
+                type="text"
+                value={bizGst}
+                onChange={(e) => setBizGst(e.target.value.toUpperCase())}
+                placeholder="22AAAAA0000A1Z5"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5 text-sm font-semibold uppercase text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+          </div>
+
+          <button
+            onClick={handleBusinessUpload}
+            disabled={bizUploading || !bizFile}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {bizUploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />} Upload &amp; Verify
+          </button>
+        </div>
+      )}
 
       {/* Documents - only if the object actually has document fields */}
       {docs.length > 0 && (
