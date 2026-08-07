@@ -19,8 +19,9 @@ export default function SubscriptionModal({ isOpen, onClose, onSuccess, jwtToken
     setLoading(true);
     setError(null);
     try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       // 1. Fetch Payment Session ID
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/payments/create-subscription-order`, {
+      const res = await fetch(`${backendUrl}/api/v1/payments/create-subscription-order`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
@@ -49,7 +50,7 @@ export default function SubscriptionModal({ isOpen, onClose, onSuccess, jwtToken
           setLoading(false);
         } else if (result.paymentDetails) {
           // Verify with Backend
-          const verifyRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/payments/verify/${orderId}`, {
+          const verifyRes = await fetch(`${backendUrl}/api/v1/payments/verify/${orderId}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${jwtToken}` }
           });
