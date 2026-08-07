@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (toggled via the `dark` class on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-saffron: #FF9933;
   --color-charcoal: #111111;
@@ -34,5 +37,16 @@
   }
   .hard-border {
     border: 2px solid var(--color-charcoal);
+  }
+}
+
+/* Continuous marquee/ticker loop. Content is duplicated (2x) in the markup,
+   so translating by -50% produces a seamless, infinite scroll. */
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
