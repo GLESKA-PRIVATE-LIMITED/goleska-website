@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/context/AuthContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { Toaster } from "sonner";
 
 export default function RootLayout({
@@ -31,10 +32,12 @@ export default function RootLayout({
       <body
         className={`${anton.variable} ${inter.variable} antialiased selection:bg-[var(--color-saffron)] selection:text-white`}
       >
-        <AuthProvider>
-          {children}
-          <Toaster position="top-right" richColors closeButton />
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton />
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

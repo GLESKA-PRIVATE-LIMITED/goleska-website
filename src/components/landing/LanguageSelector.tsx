@@ -2,9 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Globe, Check, ChevronDown } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageCode } from '@/lib/translations';
 
-// UI-only language selector (no translation logic yet).
-const LANGUAGES = [
+const LANGUAGES: { code: LanguageCode; label: string }[] = [
   { code: 'EN', label: 'English' },
   { code: 'HI', label: 'हिन्दी' },
   { code: 'MR', label: 'मराठी' },
@@ -13,8 +14,10 @@ const LANGUAGES = [
 
 export default function LanguageSelector() {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(LANGUAGES[0]);
+  const { language, setLanguage } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
+
+  const selected = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -43,7 +46,7 @@ export default function LanguageSelector() {
             <button
               key={lang.code}
               onClick={() => {
-                setSelected(lang);
+                setLanguage(lang.code);
                 setOpen(false);
               }}
               className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
