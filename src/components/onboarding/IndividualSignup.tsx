@@ -226,14 +226,22 @@ export default function IndividualSignup() {
     }
     setSendingOtp(true);
     try {
-      // Attaches the phone to the already-authenticated user and triggers a
-      // real SMS OTP (Supabase "phone_change" verification).
-      const { error: updateError } = await supabase.auth.updateUser({ phone: phone.trim() });
-      if (updateError) {
-        setError(updateError.message || 'Could not send the verification code. Please try again.');
-        setSendingOtp(false);
-        return;
+      // Format phone to +91XXXXXXXXXX
+      const formattedPhone = `+91${phone.trim()}`;
+      
+      // Call backend OTP service instead of Supabase
+      const res = await fetch(`${backendUrl}/api/v1/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: formattedPhone }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        const msg = parseApiError(err, 'Could not send the verification code. Please try again.');
+        throw new Error(msg);
       }
+
       setOtpSent(true);
     } catch (err: any) {
       setError(err.message || 'Could not send the verification code. Please try again.');
@@ -251,16 +259,35 @@ export default function IndividualSignup() {
     }
     setVerifyingOtp(true);
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone: phone.trim(),
-        token: otp.trim(),
-        type: 'phone_change',
+      // Format phone to +91XXXXXXXXXX
+      const formattedPhone = `+91${phone.trim()}`;
+
+      // Verify with backend OTP service
+      const res = await fetch(`${backendUrl}/api/v1/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: formattedPhone,
+          otp_code: otp.trim(),
+        }),
       });
-      if (verifyError) {
-        setError(verifyError.message || 'That code was incorrect or expired. Please try again.');
-        setVerifyingOtp(false);
-        return;
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        const msg = parseApiError(err, 'That code was incorrect or expired. Please try again.');
+        throw new Error(msg);
       }
+
+      // After successful backend OTP verification, update Supabase user's phone
+      // so it gets included in the JWT for worker registration
+      const { error: updateError } = await supabase.auth.updateUser({
+        phone: formattedPhone,
+      });
+      if (updateError) {
+        throw new Error(updateError.message || 'Could not update phone in account.');
+      }
+
+      // Proceed with worker registration
       await registerAndGo();
     } catch (err: any) {
       setError(err.message || 'Verification failed. Please try again.');
