@@ -19,7 +19,7 @@ export default function SubscriptionModal({ isOpen, onClose, onSuccess, jwtToken
     setLoading(true);
     setError(null);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       // 1. Fetch Payment Session ID
       const res = await fetch(`${backendUrl}/api/v1/payments/create-subscription-order`, {
         method: 'POST',
