@@ -6,11 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signInWithOtp: (phone: string) => Promise<{ error: any }>;
-  verifyOtp: (phone: string, token: string) => Promise<{ error: any }>;
+  signInWithOtp: (email: string) => Promise<{ error: any }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: any }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -40,13 +38,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithOtp = async (phone: string) => {
-    // The user mentioned Supabase test numbers don't accept '+' sign, so we send the raw number.
-    return await supabase.auth.signInWithOtp({ phone });
+  const signInWithOtp = async (email: string) => {
+    return await supabase.auth.signInWithOtp({ email });
   };
 
-  const verifyOtp = async (phone: string, token: string) => {
-    const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' });
+  const verifyOtp = async (email: string, token: string) => {
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.user);
+    }
+    return { error };
+  };
+
+  const signInWithPassword = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (data.session) {
       setSession(data.session);
       setUser(data.user);
@@ -60,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithOtp, verifyOtp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithOtp, verifyOtp, signInWithPassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );

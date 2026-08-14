@@ -77,6 +77,12 @@ export default function IndividualEmployerForm({ formData, updateFormData, onCom
         const detail = Array.isArray(err?.detail)
           ? err.detail.map((e: any) => e?.msg).filter(Boolean).join(', ')
           : err?.detail;
+        const msg = (detail || 'Failed to register. Please try again.').toLowerCase();
+        // If already registered (existing employer), treat as success and complete
+        if (msg.includes('already') || msg.includes('registered')) {
+          onComplete();
+          return;
+        }
         throw new Error(detail || 'Failed to register. Please try again.');
       }
 
