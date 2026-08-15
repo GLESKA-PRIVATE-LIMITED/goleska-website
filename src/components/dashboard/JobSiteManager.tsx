@@ -24,17 +24,27 @@ export default function JobSiteManager() {
   }, [session]);
 
   const fetchSites = async () => {
+    if (!session?.access_token) {
+      setJobSites([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/job-sites/me`, {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       });
-      if (!res.ok) throw new Error('Failed to fetch job sites');
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.detail || 'Failed to fetch job sites');
+      }
       const data = await res.json();
       setJobSites(data);
     } catch (err: any) {
       console.error(err);
+      setError(err.message || 'Failed to fetch job sites');
     } finally {
       setLoading(false);
     }
