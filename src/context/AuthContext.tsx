@@ -9,6 +9,7 @@ interface AuthContextType {
   signInWithOtp: (email: string) => Promise<{ error: any }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: any }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: (redirectPath?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -60,13 +61,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
+  const signInWithGoogle = async (redirectPath = '/dashboard') => {
+    const safePath = redirectPath.startsWith('/') ? redirectPath : `/${redirectPath}`;
+    const redirectTo = `${window.location.origin}${safePath}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+      },
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     router.push('/');
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithOtp, verifyOtp, signInWithPassword, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithOtp, verifyOtp, signInWithPassword, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

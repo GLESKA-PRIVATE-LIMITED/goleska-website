@@ -84,7 +84,7 @@ const STRENGTH = [
  */
 export default function IndividualSignup() {
   const router = useRouter();
-  const { session, user, loading: authLoading } = useAuth();
+  const { session, user, loading: authLoading, signInWithGoogle } = useAuth();
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const [step, setStep] = useState<Step>('ACCOUNT');
@@ -222,6 +222,21 @@ export default function IndividualSignup() {
       }
     } catch (err: any) {
       setError(err.message || 'Could not create your account. Please try again.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setError('');
+    setCreating(true);
+    try {
+      const { error } = await signInWithGoogle('/signup/individual');
+      if (error) {
+        setError(error.message || 'Google sign-in could not be started. Please try again.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Google sign-in could not be started. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -437,11 +452,12 @@ export default function IndividualSignup() {
               <div className="space-y-3">
                 <button
                   type="button"
-                  disabled
-                  title="Google sign-in is not enabled for this workspace yet"
-                  className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-6 py-3 text-sm font-bold text-slate-400"
+                  onClick={handleGoogleAuth}
+                  disabled={creating}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <LockIcon size={15} /> Continue with Google
+                  {creating ? <Loader2 className="animate-spin" size={15} /> : <LockIcon size={15} />}
+                  Continue with Google
                 </button>
                 <button
                   type="button"
@@ -452,7 +468,7 @@ export default function IndividualSignup() {
                   <LockIcon size={15} /> Continue with Apple
                 </button>
                 <p className="text-center text-[11px] font-medium text-slate-400">
-                  Google &amp; Apple sign-in are not enabled for this workspace yet.
+                  Apple sign-in remains disabled until the provider is configured in Supabase.
                 </p>
               </div>
             </>
