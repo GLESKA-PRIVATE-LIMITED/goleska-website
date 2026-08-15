@@ -461,6 +461,24 @@ export default function RegisteredIndustryWizard({ formData, updateFormData, onB
             {/* STEP 2: KYC Information - real PAN verify + confirmation (shared pattern) */}
             {step === 2 && (
               <div className="space-y-5">
+                {/* Demo mode notice */}
+                <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-lg">🧪</span>
+                    <div>
+                      <p className="text-xs font-bold text-amber-800">Demo / Sandbox Mode — Any PAN accepted</p>
+                      <p className="mt-0.5 text-xs text-amber-700">Enter any 10-character PAN and it will pass verification.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { updateFormData({ pan_number: 'ABCDE1234F', pan_consent: true }); setPanVerified(false); setPanResult(null); }}
+                    className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-200"
+                  >
+                    Autofill
+                  </button>
+                </div>
+
                 <div className="flex items-start gap-3 rounded-xl bg-indigo-50 p-4">
                   <ShieldCheck className="mt-0.5 shrink-0 text-indigo-600" size={20} />
                   <p className="text-sm text-indigo-900/80">
@@ -564,6 +582,24 @@ export default function RegisteredIndustryWizard({ formData, updateFormData, onB
             {/* STEP 3: Bank Account Setup - real penny-drop verification (shared pattern) */}
             {step === 3 && (
               <div className="space-y-5">
+                {/* Demo mode notice */}
+                <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-lg">🧪</span>
+                    <div>
+                      <p className="text-xs font-bold text-amber-800">Demo / Sandbox Mode — Any bank details accepted</p>
+                      <p className="mt-0.5 text-xs text-amber-700">Enter any account number and IFSC — verification will pass.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { updateFormData({ bank_account_number: '1234567890', bank_ifsc: 'HDFC0001234', bank_account_holder_name: formData.bank_account_holder_name || formData.company_name || 'Test Account' }); setBankVerified(false); setBankResult(null); }}
+                    className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-200"
+                  >
+                    Autofill
+                  </button>
+                </div>
+
                 <div className="flex items-start gap-3 rounded-xl bg-indigo-50 p-4">
                   <ShieldCheck className="mt-0.5 shrink-0 text-indigo-600" size={20} />
                   <p className="text-sm text-indigo-900/80">

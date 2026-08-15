@@ -52,50 +52,75 @@ export default function OnboardingPage() {
 
     const checkExisting = async () => {
       const phone = user?.phone;
-      if (!phone) return;
-
-      // The database might store the phone with a '+' prefix, while Supabase Auth might return it without.
-      // We check for both variations to prevent forcing users to re-register.
-      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-      const rawPhone = phone.replace('+', '');
-
-      const checkEmployer = async () => {
-        const { data } = await supabase
-          .from('employers')
-          .select('*')
-          .in('phone', [formattedPhone, rawPhone])
-          .maybeSingle();
-        return !!data;
-      };
-
-      const checkWorker = async () => {
-        const { data } = await supabase
-          .from('workers')
-          .select('*')
-          .in('phone', [formattedPhone, rawPhone])
-          .maybeSingle();
-        return !!data;
-      };
-
-      // Same phone number can end up registering both an employer and a
-      // worker profile. If the user chose "I want work" at login, only skip
-      // onboarding when a worker profile already exists for this phone -
-      // an existing employer profile shouldn't block worker registration.
-      const savedSide = localStorage.getItem('onboardingSide');
-
-      if (savedSide === 'WORKER') {
-        if (await checkWorker()) {
-          router.push('/dashboard');
-          return;
+      const email = session?.user?.email;
+      
+      // Try to fetch the authenticated user's profiles via the backend.
+      // Check both worker and employer - if either exists, redirect to dashboard.
+      if (session?.access_token) {
+        try {
+          const workerRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/workers/me`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          if (workerRes.ok) {
+            router.push('/dashboard');
+            return;
+          }
+        } catch (e) {
+          // Silently continue
         }
-      } else {
-        if (await checkEmployer()) {
-          router.push('/dashboard');
-          return;
+
+        try {
+          const employerRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/employers/me`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          if (employerRes.ok) {
+            router.push('/dashboard');
+            return;
+          }
+        } catch (e) {
+          // Silently continue
         }
-        if (await checkWorker()) {
-          router.push('/dashboard');
-          return;
+      }
+
+      // Fallback: Check by phone if available
+      if (phone) {
+        const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+        const rawPhone = phone.replace('+', '');
+
+        const checkEmployer = async () => {
+          const { data } = await supabase
+            .from('employers')
+            .select('*')
+            .in('phone', [formattedPhone, rawPhone])
+            .maybeSingle();
+          return !!data;
+        };
+
+        const checkWorker = async () => {
+          const { data } = await supabase
+            .from('workers')
+            .select('*')
+            .in('phone', [formattedPhone, rawPhone])
+            .maybeSingle();
+          return !!data;
+        };
+
+        const savedSide = localStorage.getItem('onboardingSide');
+
+        if (savedSide === 'WORKER') {
+          if (await checkWorker()) {
+            router.push('/dashboard');
+            return;
+          }
+        } else {
+          if (await checkEmployer()) {
+            router.push('/dashboard');
+            return;
+          }
+          if (await checkWorker()) {
+            router.push('/dashboard');
+            return;
+          }
         }
       }
 
@@ -149,7 +174,12 @@ export default function OnboardingPage() {
           setAccountType(null);
           setCurrentStep(1);
         }}
-        onComplete={() => router.push('/dashboard')}
+        onComplete={() => {
+            localStorage.removeItem('onboardingEmail');
+            localStorage.removeItem('onboardingSide');
+            localStorage.removeItem('onboardingStartTime');
+            router.push('/dashboard');
+          }}
       />
     );
   }
@@ -164,7 +194,12 @@ export default function OnboardingPage() {
           setAccountType(null);
           setCurrentStep(1);
         }}
-        onComplete={() => router.push('/dashboard')}
+        onComplete={() => {
+            localStorage.removeItem('onboardingEmail');
+            localStorage.removeItem('onboardingSide');
+            localStorage.removeItem('onboardingStartTime');
+            router.push('/dashboard');
+          }}
       />
     );
   }
@@ -179,7 +214,12 @@ export default function OnboardingPage() {
           setAccountType(null);
           setCurrentStep(1);
         }}
-        onComplete={() => router.push('/dashboard')}
+        onComplete={() => {
+            localStorage.removeItem('onboardingEmail');
+            localStorage.removeItem('onboardingSide');
+            localStorage.removeItem('onboardingStartTime');
+            router.push('/dashboard');
+          }}
       />
     );
   }
@@ -194,7 +234,12 @@ export default function OnboardingPage() {
           setAccountType(null);
           setCurrentStep(1);
         }}
-        onComplete={() => router.push('/dashboard')}
+        onComplete={() => {
+            localStorage.removeItem('onboardingEmail');
+            localStorage.removeItem('onboardingSide');
+            localStorage.removeItem('onboardingStartTime');
+            router.push('/dashboard');
+          }}
       />
     );
   }
@@ -211,7 +256,12 @@ export default function OnboardingPage() {
           setAccountType(null);
           setCurrentStep(1);
         }}
-        onComplete={() => router.push('/dashboard')}
+        onComplete={() => {
+            localStorage.removeItem('onboardingEmail');
+            localStorage.removeItem('onboardingSide');
+            localStorage.removeItem('onboardingStartTime');
+            router.push('/dashboard');
+          }}
       />
     );
   }
@@ -273,7 +323,12 @@ export default function OnboardingPage() {
               accountType={accountType}
               formData={formData} 
               updateFormData={updateFormData} 
-              onComplete={() => router.push('/dashboard')} 
+              onComplete={() => {
+            localStorage.removeItem('onboardingEmail');
+            localStorage.removeItem('onboardingSide');
+            localStorage.removeItem('onboardingStartTime');
+            router.push('/dashboard');
+          }} 
               onBack={prevStep} 
             />
           )}

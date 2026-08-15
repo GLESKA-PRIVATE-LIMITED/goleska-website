@@ -626,6 +626,24 @@ export default function EmployeeWizard({ formData, updateFormData, onBackToStart
             {/* STEP 3: Verification - PAN + ID + liveness */}
             {step === 3 && (
               <div className="space-y-5">
+                {/* Demo mode notice */}
+                <div className="flex items-start justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-0.5 shrink-0 text-lg">🧪</span>
+                    <div>
+                      <p className="text-xs font-bold text-amber-800">Demo / Sandbox Mode — Any PAN accepted</p>
+                      <p className="mt-0.5 text-xs text-amber-700">Enter any 10-character PAN and it will pass. ID upload and liveness steps are also simulated.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { updateFormData({ pan_number: 'ABCDE1234F', pan_consent: true }); setPanVerified(false); setPanResult(null); }}
+                    className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:bg-amber-200"
+                  >
+                    Autofill PAN
+                  </button>
+                </div>
+
                 {/* PAN */}
                 <div className={`rounded-xl border p-5 ${panVerified ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50/60'}`}>
                   <div className="mb-3 flex items-center justify-between">

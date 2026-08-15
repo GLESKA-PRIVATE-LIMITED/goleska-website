@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ArrowLeft, Loader2, Mail, Phone, Zap, Hammer, Briefcase } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Loader2, Mail, Phone, Zap, Hammer, Briefcase, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import OnboardingSidePanel from '@/components/onboarding/OnboardingSidePanel';
@@ -22,15 +22,13 @@ const iconCls = 'pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 
 const primaryBtnCls = 'inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-60';
 
 function LoginPageInner() {
-  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [side, setSide] = useState<'WORKER' | 'EMPLOYER' | null>(null);
   
-  const { signInWithOtp, verifyOtp } = useAuth();
+  const { signInWithPassword } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -46,68 +44,68 @@ function LoginPageInner() {
     }
   }, [searchParams]);
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Client-side validation - never let malformed input reach the backend/Twilio.
-    const phoneRegex = /^\d{10}$/; // 10 digits (the +91 is a fixed visual prefix)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!phoneRegex.test(phone.trim())) {
-      setError('Please enter a valid 10-digit phone number.');
-      return;
-    }
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const { error: signInError } = await signInWithOtp(phone);
+      const { error: signInError } = await signInWithPassword(email.trim(), password);
 
       if (signInError) {
-        // Don't surface raw Twilio/Supabase error text to the user.
-        console.error('signInWithOtp failed:', signInError);
-        setError('Something went wrong, please try again.');
+        setError(signInError.message || 'Invalid email or password.');
         setLoading(false);
         return;
       }
 
-      setStep('OTP');
-      setLoading(false);
+      localStorage.setItem('onboardingEmail', email.trim());
+      localStorage.setItem('onboardingStartTime', Date.now().toString());
+
+      // Check existing profile logic
+      const checkExistingProfile = async () => {
+        try {
+          const { data: workerData } = await supabase
+            .from('workers')
+            .select('*')
+            .eq('email', email.trim())
+            .maybeSingle();
+          if (workerData) {
+            router.push('/dashboard');
+            return;
+          }
+        } catch (e) {}
+        try {
+          const { data: employerData } = await supabase
+            .from('employers')
+            .select('*')
+            .eq('email', email.trim())
+            .maybeSingle();
+          if (employerData) {
+            router.push('/dashboard');
+            return;
+          }
+        } catch (e) {}
+        // No existing profile, go to onboarding
+        router.push('/onboarding');
+      };
+      
+      await checkExistingProfile();
     } catch (err) {
-      console.error('signInWithOtp threw:', err);
+      console.error('signInWithPassword threw:', err);
       setError('Something went wrong, please try again.');
       setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length < 6) {
-      setError('Please enter a valid 6-digit OTP.');
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
-    
-    const { error: verifyError } = await verifyOtp(phone, otp);
-    
-    if (verifyError) {
-      setError(verifyError.message);
-      setLoading(false);
-    } else {
-      // OTP verified successfully!
-      // Save email for onboarding
-      localStorage.setItem('onboardingEmail', email);
-      // [Onboarding Timer] Stamp signup start = OTP verification time.
-      localStorage.setItem('onboardingStartTime', Date.now().toString());
-      console.log('[Onboarding Timer] Started at OTP verification.');
-      router.push('/onboarding');
     }
   };
 
@@ -146,84 +144,47 @@ function LoginPageInner() {
             <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
               Enter the <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Factory</span>
             </h1>
-            <p className="mt-1 text-sm text-slate-500">Login via OTP to continue.</p>
           </div>
-
-          {error && (
-            <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
-              {error}
-            </div>
-          )}
-
-          {step === 'PHONE' ? (
-            <form onSubmit={handleSendOtp} className="space-y-5">
-              <div>
-                <label className={labelCls}>Email Address</label>
-                <div className="relative">
-                  <Mail className={iconCls} size={18} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={inputCls + ' pl-11'}
-                    placeholder="you@company.com"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={labelCls}>Mobile Number</label>
-                <div className="flex">
-                  <span className="inline-flex items-center rounded-l-xl border border-r-0 border-slate-200 bg-slate-100 px-4 text-sm font-semibold text-slate-600">+91</span>
-                  <div className="relative flex-1">
-                    <Phone className={iconCls} size={18} />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className={inputCls + ' rounded-l-none pl-11'}
-                      placeholder="9999999999"
-                      maxLength={10}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className={primaryBtnCls}>
-                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Send OTP'}
-                {!loading && <ArrowRight size={18} />}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-5">
-              <div>
-                <label className={labelCls}>6-Digit OTP</label>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className={labelCls}>Email Address</label>
+              <div className="relative">
+                <Mail className={iconCls} size={18} />
                 <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className={inputCls + ' text-center text-2xl font-bold tracking-[0.5em]'}
-                  placeholder="000000"
-                  maxLength={6}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputCls + ' pl-11'}
+                  placeholder="you@company.com"
+                  required
                 />
-                <p className="mt-2 text-center text-xs font-medium text-slate-500">
-                  Sent to +91 {phone} <button type="button" onClick={() => setStep('PHONE')} className="ml-1 font-semibold text-indigo-600 underline">Edit</button>
-                </p>
               </div>
+            </div>
 
-              <button type="submit" disabled={loading} className={primaryBtnCls}>
-                {loading ? <Loader2 className="animate-spin" size={18} /> : 'Verify & Enter'}
-                {!loading && <ArrowRight size={18} />}
-              </button>
-            </form>
-          )}
+            <div>
+              <label className={labelCls}>Password</label>
+              <div className="relative">
+                <Lock className={iconCls} size={18} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputCls + ' pl-11'}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} className={primaryBtnCls}>
+              {loading ? <Loader2 className="animate-spin" size={18} /> : 'Login'}
+              {!loading && <ArrowRight size={18} />}
+            </button>
+          </form>
 
           {/* Individual worker signup - a ChatGPT-style email/password entry that
               does not require the phone-OTP login above. */}
-          {step === 'PHONE' && (
-            <>
-              <div className="my-6 flex items-center gap-3">
+          <div className="my-6 flex items-center gap-3">
                 <span className="h-px flex-1 bg-slate-200" />
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">new here?</span>
                 <span className="h-px flex-1 bg-slate-200" />
@@ -234,8 +195,6 @@ function LoginPageInner() {
               >
                 Sign up as an Individual worker <ArrowRight size={16} />
               </Link>
-            </>
-          )}
         </div>
       </main>
     </div>

@@ -120,6 +120,7 @@ export default function IndividualSignup() {
       const token = activeSession?.access_token;
       const finalName = (name || (activeSession?.user?.user_metadata?.full_name as string) || '').trim();
       const finalEmail = (email || activeSession?.user?.email || '').trim();
+      const finalPhone = (activeSession?.user?.phone as string | undefined) || (phone ? `+91${phone.trim()}` : '') || null;
       const res = await fetch(`${backendUrl}/api/v1/workers/register`, {
         method: 'POST',
         headers: {
@@ -132,7 +133,7 @@ export default function IndividualSignup() {
           // fails the backend's EmailStr validation and returns a 422.
           name: finalName || null,
           email: finalEmail || null,
-          phone: activeSession?.user?.phone,
+          phone: finalPhone,
           // Individuals take dispatch gigs; a real pin is captured later on the
           // dashboard. Seed with a default location like the other worker flows.
           latitude: 28.6139,
@@ -142,11 +143,14 @@ export default function IndividualSignup() {
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         const msg = parseApiError(err, 'We could not finish creating your account. Please try again.');
-        if (!msg.toLowerCase().includes('already')) {
-          throw new Error(msg);
+        const normalized = msg.toLowerCase();
+        if (normalized.includes('already')) {
+          router.replace('/dashboard');
+          return;
         }
+        throw new Error(msg);
       }
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } catch (e: any) {
       registeredRef.current = false;
       setError(e.message || 'Something went wrong finishing your account.');
@@ -199,6 +203,12 @@ export default function IndividualSignup() {
         },
       });
       if (signUpError) {
+        const errorMsg = (signUpError.message || 'Could not create your account. Please try again.').toLowerCase();
+        // If user already exists, send them to dashboard (idempotent flow)
+        if (errorMsg.includes('already') || errorMsg.includes('registered')) {
+          router.replace('/dashboard');
+          return;
+        }
         setError(signUpError.message || 'Could not create your account. Please try again.');
         setCreating(false);
         return;
@@ -226,14 +236,28 @@ export default function IndividualSignup() {
     }
     setSendingOtp(true);
     try {
-      // Attaches the phone to the already-authenticated user and triggers a
-      // real SMS OTP (Supabase "phone_change" verification).
-      const { error: updateError } = await supabase.auth.updateUser({ phone: phone.trim() });
-      if (updateError) {
-        setError(updateError.message || 'Could not send the verification code. Please try again.');
-        setSendingOtp(false);
-        return;
+      // Format phone to +91XXXXXXXXXX
+      const formattedPhone = `+91${phone.trim()}`;
+      
+      // Call backend OTP service instead of Supabase
+      const res = await fetch(`${backendUrl}/api/v1/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: formattedPhone }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        const msg = parseApiError(err, 'Could not send the verification code. Please try again.');
+        throw new Error(msg);
       }
+
+      const data = await res.json();
+      if (data?.mock_otp) {
+        setOtp(data.mock_otp);
+        setError(`Mock OTP for testing: ${data.mock_otp}`);
+      }
+
       setOtpSent(true);
     } catch (err: any) {
       setError(err.message || 'Could not send the verification code. Please try again.');
@@ -251,16 +275,37 @@ export default function IndividualSignup() {
     }
     setVerifyingOtp(true);
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone: phone.trim(),
-        token: otp.trim(),
-        type: 'phone_change',
+      // Format phone to +91XXXXXXXXXX
+      const formattedPhone = `+91${phone.trim()}`;
+
+      // Verify with backend OTP service
+      const res = await fetch(`${backendUrl}/api/v1/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: formattedPhone,
+          otp_code: otp.trim(),
+        }),
       });
-      if (verifyError) {
-        setError(verifyError.message || 'That code was incorrect or expired. Please try again.');
-        setVerifyingOtp(false);
-        return;
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        const msg = parseApiError(err, 'That code was incorrect or expired. Please try again.');
+        throw new Error(msg);
       }
+
+      // After successful backend OTP verification, update Supabase user's phone
+      // when possible. Some local/test setups do not allow this update, so we
+      // continue with the verified phone as a fallback and keep the registration
+      // flow moving.
+      const { error: updateError } = await supabase.auth.updateUser({
+        phone: formattedPhone,
+      });
+      if (updateError) {
+        console.warn('Supabase phone update skipped:', updateError.message || updateError);
+      }
+
+      // Proceed with worker registration
       await registerAndGo();
     } catch (err: any) {
       setError(err.message || 'Verification failed. Please try again.');
