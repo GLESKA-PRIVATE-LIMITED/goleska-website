@@ -500,7 +500,7 @@ export default function IndividualSignup() {
                   Verify your <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">phone</span>
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  {otpSent ? 'Enter the 6-digit code we sent you.' : 'Add a phone number so employers can reach you.'}
+                  {otpSent ? 'Enter the 4-digit code we sent you.' : 'Add a phone number so employers can reach you.'}
                 </p>
               </div>
 
@@ -531,14 +531,14 @@ export default function IndividualSignup() {
               ) : (
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
                   <div>
-                    <label className={labelCls}>6-Digit OTP</label>
+                    <label className={labelCls}>4-Digit OTP</label>
                     <input
                       type="text"
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       className={inputCls + ' text-center text-2xl font-bold tracking-[0.5em]'}
-                      placeholder="000000"
-                      maxLength={6}
+                      placeholder="0000"
+                      maxLength={4}
                     />
                     <p className="mt-2 text-center text-xs font-medium text-slate-500">
                       Sent to +91 {phone}
